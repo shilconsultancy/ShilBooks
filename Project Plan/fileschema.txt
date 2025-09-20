@@ -1,0 +1,20 @@
+Home
+Items
+    Items
+Sales
+    Customers
+    Quotes
+    Invoices
+    Sales Receipts
+    Recurring Invoices
+    Payments Received
+    Credit Notes
+Purchases
+    Vendors
+    Expenses
+Banking
+Accountant
+    Manual Journals
+    Chart of Accounts
+Reports
+Documents

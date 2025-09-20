@@ -1,0 +1,109 @@
+SETTINGS
+
+1. Company Settings (Single Page)
+   - Company Name
+   - Registration Number
+   - Address
+   - Phone Number
+   - Email Address
+   - Website
+   - Company Logo Upload
+   - Branding Color / Theme
+   - Language Preference
+   - Regional Format (date, number, currency display)
+   - Time Zone
+
+2. Profile Settings (Single Page)
+   - Full Name
+   - Username
+   - Email
+   - Phone
+   - Profile Picture
+   - Password (Change / Reset)
+   - Notification Preferences (email / SMS / push)
+   - Two-Factor Authentication
+
+3. Financial Settings (Single Page)
+   - Currency Settings
+     • Base Currency  
+     • Enable Multi-Currency  
+     • Exchange Rate Source (Manual / API)  
+
+   - Tax Settings
+     • Default Tax Rate (VAT, GST, etc.)  
+     • Multiple Tax Rates (create/update)  
+     • Withholding Tax Setup  
+     • Tax Inclusive or Exclusive Pricing  
+
+   - Fiscal Year
+     • Fiscal Year Start Date  
+     • Fiscal Year End Date  
+     • Accounting Periods (monthly/quarterly/annual)  
+
+   - Chart of Accounts
+     • Add/Edit Account Categories (Assets, Liabilities, Equity, Income, Expenses)  
+     • Default Accounts (Cash, Bank, Accounts Receivable, Accounts Payable, etc.)  
+
+   - Bank & Cash
+     • Default Bank Accounts  
+     • Cash Handling Rules  
+     • Linked Payment Gateways  
+
+   - Invoice & Billing
+     • Invoice Numbering Format  
+     • Default Payment Terms  
+     • Late Payment Fee Rules  
+     • Recurring Invoice Setup  
+
+   - Expense Settings
+     • Expense Categories  
+     • Approval Workflows  
+
+   - Reporting
+     • Reporting Currency  
+     • Consolidated Reporting (yes/no)  
+     • Period Closing Rules  
+
+4. User & Role Management (Single Page)
+   - Add / Remove Users  
+   - User Roles (Admin, Accountant, Auditor, Staff, etc.)  
+   - Assign Permissions per Role  
+   - Enable/Disable Users  
+   - Two-Factor Authentication  
+
+5. Notifications (Single Page)
+   - Email Templates (Invoice, Payment Reminder, Expense Approval, etc.)  
+   - SMS / WhatsApp Notification Settings  
+   - Push Notification Settings  
+
+6. Integration Settings (Single Page)
+   - Payment Gateways (Stripe, PayPal, local banks)  
+   - Payroll Integrations  
+   - E-commerce or POS Sync  
+   - API Keys  
+   - Webhooks  
+
+7. Compliance & Audit (Single Page)
+   - Data Retention Policy  
+   - Audit Logs Access  
+   - Enable Electronic Signatures  
+   - Country-Specific Compliance Rules (e.g., Bangladesh NBR VAT)  
+
+8. Customization (Single Page)
+   - Document Templates (Invoice, Receipt, Quotation, PO)  
+   - Add Custom Fields (for forms, invoices, expenses, etc.)  
+   - Theme / UI Preferences  
+
+9. Backup & Security (Single Page)
+   - Automatic Backup Frequency  
+   - Backup Storage Location  
+   - Encryption Settings  
+   - Access Logs  
+   - Restore From Backup  
+
+10. Advanced Features (Single Page)
+    - Multi-Branch Management  
+    - Multi-Company Setup  
+    - Cost Center & Department Tracking  
+    - Budgeting & Forecasting  
+    - Consolidation Rules
