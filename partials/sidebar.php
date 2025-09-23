@@ -1,0 +1,152 @@
+<?php
+// Get the current URI to determine the active module/page
+$currentUri = $_SERVER['REQUEST_URI'];
+
+// --- Define active states for different sections ---
+$is_dashboard_page = (strpos($currentUri, 'dashboard.php') !== false);
+
+$is_items_section = (strpos($currentUri, '/items/') !== false);
+
+$is_sales_section = (strpos($currentUri, '/sales/') !== false);
+$is_customers_page = (strpos($currentUri, '/sales/customers/') !== false);
+$is_quotes_page = (strpos($currentUri, '/sales/quotes/') !== false);
+
+// Placeholders for future modules
+$is_purchases_section = (strpos($currentUri, '/purchases/') !== false);
+$is_banking_page = (strpos($currentUri, '/banking/') !== false);
+$is_accountant_section = (strpos($currentUri, '/accountant/') !== false);
+$is_reports_page = (strpos($currentUri, '/reports/') !== false);
+$is_documents_page = (strpos($currentUri, '/documents/') !== false);
+
+?>
+<div id="sidebar" class="sidebar w-64 bg-macgray-800 text-white flex-shrink-0 flex flex-col h-full fixed md:relative z-40">
+    <div class="p-4 border-b border-macgray-700 flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+            <div class="w-8 h-8 rounded-md bg-macblue-500 flex items-center justify-center">
+                <i data-feather="dollar-sign" class="text-white"></i>
+            </div>
+            <span class="font-semibold text-lg">Financia</span>
+        </div>
+        <div class="md:hidden">
+            <button id="closeMenu" class="p-1 rounded-md hover:bg-macgray-700">
+                <i data-feather="x"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="p-4 border-b border-macgray-700 flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-full bg-macblue-500 flex items-center justify-center">
+            <i data-feather="user" class="text-white"></i>
+        </div>
+        <div>
+            <div class="font-medium"><?php echo htmlspecialchars($_SESSION["user_name"]); ?></div>
+            <div class="text-xs text-macgray-400">Premium Account</div>
+        </div>
+    </div>
+
+    <div class="flex-1 overflow-y-auto py-2">
+        <nav>
+            <ul class="space-y-1 px-2">
+                <li>
+                    <a href="<?php echo BASE_PATH; ?>dashboard.php" class="flex items-center px-3 py-2 rounded-md <?php echo $is_dashboard_page ? 'bg-macblue-700 text-white' : 'hover:bg-macgray-700'; ?>">
+                        <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="home" class="w-4 h-4"></i></span>
+                        <span>Home</span>
+                    </a>
+                </li>
+
+                <li class="mt-4">
+                    <div class="px-3 py-2 flex items-center justify-between rounded-md hover:bg-macgray-700 cursor-pointer">
+                        <div class="flex items-center">
+                            <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="box" class="w-4 h-4"></i></span>
+                            <span>Items</span>
+                        </div>
+                        <i data-feather="chevron-down" class="w-4 h-4 transition-transform transform <?php echo $is_items_section ? 'rotate-180' : ''; ?>"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 <?php echo !$is_items_section ? 'hidden' : ''; ?>">
+                        <li><a href="<?php echo BASE_PATH; ?>items/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_items_section ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">All Items</a></li>
+                    </ul>
+                </li>
+
+                <li class="mt-4">
+                    <div class="px-3 py-2 flex items-center justify-between rounded-md hover:bg-macgray-700 cursor-pointer">
+                        <div class="flex items-center">
+                            <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="shopping-cart" class="w-4 h-4"></i></span>
+                            <span>Sales</span>
+                        </div>
+                        <i data-feather="chevron-down" class="w-4 h-4 transition-transform transform <?php echo $is_sales_section ? 'rotate-180' : ''; ?>"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 <?php echo !$is_sales_section ? 'hidden' : ''; ?>">
+                        <li><a href="<?php echo BASE_PATH; ?>sales/customers/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_customers_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Customers</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/quotes/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_quotes_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Quotes</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/invoices/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Invoices</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/receipts/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Sales Receipts</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/recurring/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Recurring Invoices</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/payments/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Payments Received</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>sales/credit-notes/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Credit Notes</a></li>
+                    </ul>
+                </li>
+
+                <li class="mt-4">
+                    <div class="px-3 py-2 flex items-center justify-between rounded-md hover:bg-macgray-700 cursor-pointer">
+                        <div class="flex items-center">
+                            <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="credit-card" class="w-4 h-4"></i></span>
+                            <span>Purchases</span>
+                        </div>
+                        <i data-feather="chevron-down" class="w-4 h-4 transition-transform transform <?php echo $is_purchases_section ? 'rotate-180' : ''; ?>"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 <?php echo !$is_purchases_section ? 'hidden' : ''; ?>">
+                        <li><a href="<?php echo BASE_PATH; ?>purchases/vendors/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Vendors</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>purchases/categories/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_categories_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Expense Categories</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>purchases/expenses/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_expenses_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Expenses</a></li>
+                    </ul>
+                </li>
+
+                <li class="mt-4">
+                    <a href="<?php echo BASE_PATH; ?>banking/" class="flex items-center px-3 py-2 rounded-md <?php echo $is_banking_page ? 'bg-macblue-700 text-white' : 'hover:bg-macgray-700'; ?>">
+                        <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="briefcase" class="w-4 h-4"></i></span>
+                        <span>Banking</span>
+                    </a>
+                </li>
+
+                <li class="mt-4">
+                    <div class="px-3 py-2 flex items-center justify-between rounded-md hover:bg-macgray-700 cursor-pointer">
+                        <div class="flex items-center">
+                            <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="book" class="w-4 h-4"></i></span>
+                            <span>Accountant</span>
+                        </div>
+                        <i data-feather="chevron-down" class="w-4 h-4 transition-transform transform <?php echo $is_accountant_section ? 'rotate-180' : ''; ?>"></i>
+                    </div>
+                    <ul class="pl-4 mt-1 space-y-1 <?php echo !$is_accountant_section ? 'hidden' : ''; ?>">
+                        <li><a href="#" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Manual Journals</a></li>
+                        <li><a href="#" class="sidebar-subitem block px-3 py-2 rounded-md text-sm text-macgray-300 hover:text-white">Chart of Accounts</a></li>
+                    </ul>
+                </li>
+
+                <li class="mt-4">
+                    <a href="#" class="flex items-center px-3 py-2 rounded-md <?php echo $is_reports_page ? 'bg-macblue-700 text-white' : 'hover:bg-macgray-700'; ?>">
+                        <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="bar-chart-2" class="w-4 h-4"></i></span>
+                        <span>Reports</span>
+                    </a>
+                </li>
+
+                <li class="mt-4">
+                    <a href="#" class="flex items-center px-3 py-2 rounded-md <?php echo $is_documents_page ? 'bg-macblue-700 text-white' : 'hover:bg-macgray-700'; ?>">
+                        <span class="sidebar-icon w-6 h-6 flex items-center justify-center mr-3 transition-transform"><i data-feather="file-text" class="w-4 h-4"></i></span>
+                        <span>Documents</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="p-4 border-t border-macgray-700 space-y-2">
+        <a href="#" class="flex items-center space-x-3 text-macgray-400 hover:text-white">
+            <div class="w-8 h-8 rounded-full bg-macgray-700 flex items-center justify-center"><i data-feather="settings" class="w-4 h-4"></i></div>
+            <div class="text-sm">Settings</div>
+        </a>
+        <a href="<?php echo BASE_PATH; ?>dashboard.php?action=logout" class="flex items-center space-x-3 text-macgray-400 hover:text-white">
+            <div class="w-8 h-8 rounded-full bg-macgray-700 flex items-center justify-center"><i data-feather="log-out" class="w-4 h-4"></i></div>
+            <div class="text-sm">Logout</div>
+        </a>
+    </div>
+</div>
