@@ -64,8 +64,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             foreach ($_POST['item_id'] as $key => $itemId) {
                 if (!empty($itemId)) {
                     $quantity = $_POST['quantity'][$key];
-
-                    // Insert into invoice_items
                     $item_sql = "INSERT INTO invoice_items (invoice_id, item_id, description, quantity, price, total) 
                                  VALUES (:invoice_id, :item_id, :description, :quantity, :price, :total)";
                     $item_stmt = $pdo->prepare($item_sql);
@@ -77,8 +75,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'price' => $_POST['price'][$key],
                         'total' => $_POST['line_total'][$key]
                     ]);
-
-                    // Deduct inventory for products
                     $deduct_sql = "UPDATE items SET quantity = quantity - :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
                     $deduct_stmt = $pdo->prepare($deduct_sql);
                     $deduct_stmt->execute(['quantity' => $quantity, 'id' => $itemId, 'user_id' => $userId]);
@@ -96,6 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 
+
 // --- Fetch existing data for the form ---
 $invoice_sql = "SELECT * FROM invoices WHERE id = :id AND user_id = :user_id";
 $invoice_stmt = $pdo->prepare($invoice_sql);
@@ -112,13 +109,15 @@ $invoice_items_stmt = $pdo->prepare($invoice_items_sql);
 $invoice_items_stmt->execute(['invoice_id' => $invoice_id]);
 $invoice_items = $invoice_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Fetch Customers & Items for dropdowns
 $customer_stmt = $pdo->prepare("SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC");
 $customer_stmt->execute(['user_id' => $userId]);
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 $item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC");
 $item_stmt->execute(['user_id' => $userId]);
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
+$tax_stmt = $pdo->prepare("SELECT * FROM tax_rates WHERE user_id = :user_id ORDER BY is_default DESC, tax_name ASC");
+$tax_stmt->execute(['user_id' => $userId]);
+$tax_rates = $tax_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'Edit Invoice ' . htmlspecialchars($invoice['invoice_number']);
 require_once '../../partials/header.php';
@@ -163,12 +162,7 @@ require_once '../../partials/sidebar.php';
                     <table class="min-w-full">
                         <thead>
                             <tr>
-                                <th class="w-2/5 text-left text-sm font-medium text-gray-500 pb-2">Item</th>
-                                <th class="w-1/5 text-left text-sm font-medium text-gray-500 pb-2">Description</th>
-                                <th class="w-1/6 text-left text-sm font-medium text-gray-500 pb-2">Qty</th>
-                                <th class="w-1/6 text-left text-sm font-medium text-gray-500 pb-2">Price</th>
-                                <th class="w-1/6 text-right text-sm font-medium text-gray-500 pb-2">Total</th>
-                                <th></th>
+                                <th class="w-2/5 text-left text-sm font-medium text-gray-500 pb-2">Item</th><th class="w-1/5 text-left text-sm font-medium text-gray-500 pb-2">Description</th><th class="w-1/6 text-left text-sm font-medium text-gray-500 pb-2">Qty</th><th class="w-1/6 text-left text-sm font-medium text-gray-500 pb-2">Price</th><th class="w-1/6 text-right text-sm font-medium text-gray-500 pb-2">Total</th><th></th>
                             </tr>
                         </thead>
                         <tbody id="line-items">
@@ -206,10 +200,23 @@ require_once '../../partials/sidebar.php';
                     </div>
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                         <div class="space-y-4">
-                            <div class="flex justify-between items-center"><span class="text-sm font-medium text-gray-500">Subtotal</span><span id="subtotal-display">৳0.00</span></div>
-                            <div class="flex justify-between items-center"><span class="text-sm font-medium text-gray-500">Tax (0%)</span><span id="tax-display">৳0.00</span></div>
+                            <div class="flex justify-between items-center"><span class="text-sm font-medium text-gray-500">Subtotal</span><span id="subtotal-display"><?php echo CURRENCY_SYMBOL; ?>0.00</span></div>
+                            <div class="flex justify-between items-center">
+                                <div class="w-1/2">
+                                    <label for="tax_rate_id" class="text-sm font-medium text-gray-500">Tax</label>
+                                    <select name="tax_rate_id" id="tax_rate_id" class="mt-1 block w-full text-sm border-gray-300 rounded-md">
+                                        <option value="" data-rate="0">No Tax</option>
+                                        <?php foreach ($tax_rates as $tax): ?>
+                                            <option value="<?php echo $tax['id']; ?>" data-rate="<?php echo $tax['tax_rate']; ?>" <?php echo ($tax['id'] == $invoice['tax_rate_id']) ? 'selected' : ''; ?>>
+                                                <?php echo htmlspecialchars($tax['tax_name']) . ' (' . $tax['tax_rate'] . '%)'; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+                                <span id="tax-display" class="text-sm font-medium text-gray-900"><?php echo CURRENCY_SYMBOL; ?>0.00</span>
+                            </div>
                             <hr>
-                            <div class="flex justify-between items-center"><span class="text-lg font-semibold text-gray-900">Total</span><span id="total-display" class="font-semibold">৳0.00</span></div>
+                            <div class="flex justify-between items-center"><span class="text-lg font-semibold text-gray-900">Total</span><span id="total-display" class="font-semibold"><?php echo CURRENCY_SYMBOL; ?>0.00</span></div>
                         </div>
                     </div>
                 </div>
@@ -223,28 +230,22 @@ require_once '../../partials/sidebar.php';
 
 <template id="line-item-template">
     <tr class="line-item-row">
-        <td>
-            <select name="item_id[]" class="line-item-select block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                <option value="">Select an item</option>
-                <?php foreach ($items as $item) echo "<option value='{$item['id']}'>".htmlspecialchars($item['name'])."</option>"; ?>
-            </select>
-        </td>
+        <td><select name="item_id[]" class="line-item-select block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"><option value="">Select an item</option><?php foreach ($items as $item) echo "<option value='{$item['id']}'>".htmlspecialchars($item['name'])."</option>"; ?></select></td>
         <td><textarea name="description[]" rows="1" class="line-item-description block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea></td>
         <td><input type="number" name="quantity[]" value="1" min="1" class="line-item-quantity block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></td>
         <td><input type="number" name="price[]" value="0.00" step="0.01" class="line-item-price block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></td>
-        <td class="text-right">
-            <input type="text" class="line-item-total-display border-none bg-transparent text-right w-full" readonly value="৳0.00">
-            <input type="hidden" name="line_total[]" class="line-item-total-input" value="0.00">
-        </td>
+        <td class="text-right"><input type="text" class="line-item-total-display border-none bg-transparent text-right w-full" readonly value="<?php echo CURRENCY_SYMBOL; ?>0.00"><input type="hidden" name="line_total[]" class="line-item-total-input" value="0.00"></td>
         <td><button type="button" class="remove-line-item text-red-500 hover:text-red-700 p-1"><i data-feather="trash-2" class="w-4 h-4"></i></button></td>
     </tr>
 </template>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    const currencySymbol = '<?php echo CURRENCY_SYMBOL; ?>';
     const allItems = <?php echo json_encode($items); ?>;
     const lineItemsContainer = document.getElementById('line-items');
     const template = document.getElementById('line-item-template');
+    const taxSelect = document.getElementById('tax_rate_id');
     
     function addLineItem() {
         const clone = template.content.cloneNode(true);
@@ -258,25 +259,30 @@ document.addEventListener('DOMContentLoaded', function() {
             const quantity = parseFloat(row.querySelector('.line-item-quantity').value) || 0;
             const price = parseFloat(row.querySelector('.line-item-price').value) || 0;
             const lineTotal = quantity * price;
-            row.querySelector('.line-item-total-display').value = '৳' + lineTotal.toFixed(2);
+            row.querySelector('.line-item-total-display').value = currencySymbol + lineTotal.toFixed(2);
             row.querySelector('.line-item-total-input').value = lineTotal.toFixed(2);
             subtotal += lineTotal;
         });
-        const tax = 0;
-        const total = subtotal + tax;
-        document.getElementById('subtotal-display').innerText = '৳' + subtotal.toFixed(2);
-        document.getElementById('tax-display').innerText = '৳' + tax.toFixed(2);
-        document.getElementById('total-display').innerText = '৳' + total.toFixed(2);
+
+        const selectedTaxOption = taxSelect.options[taxSelect.selectedIndex];
+        const taxRate = parseFloat(selectedTaxOption.dataset.rate) || 0;
+        const taxAmount = subtotal * (taxRate / 100);
+        const total = subtotal + taxAmount;
+        
+        document.getElementById('subtotal-display').innerText = currencySymbol + subtotal.toFixed(2);
+        document.getElementById('tax-display').innerText = currencySymbol + taxAmount.toFixed(2);
+        document.getElementById('total-display').innerText = currencySymbol + total.toFixed(2);
+        
         document.getElementById('subtotal-input').value = subtotal.toFixed(2);
-        document.getElementById('tax-input').value = tax.toFixed(2);
+        document.getElementById('tax-input').value = taxAmount.toFixed(2);
         document.getElementById('total-input').value = total.toFixed(2);
     }
     
-    // Initial calls for pre-filled data
     calculateTotals();
     feather.replace();
     
     document.getElementById('add-line-item').addEventListener('click', addLineItem);
+    taxSelect.addEventListener('change', calculateTotals);
     
     lineItemsContainer.addEventListener('click', e => e.target.closest('.remove-line-item') && (e.target.closest('.line-item-row').remove(), calculateTotals()));
 

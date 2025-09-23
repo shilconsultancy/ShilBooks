@@ -20,7 +20,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if (empty($error)) {
-        $sql = "SELECT id, name, email, password FROM users WHERE email = :email";
+        // Updated query to also select profile_picture
+        $sql = "SELECT id, name, email, password, profile_picture FROM users WHERE email = :email";
 
         if ($stmt = $pdo->prepare($sql)) {
             $stmt->bindParam(":email", $param_email, PDO::PARAM_STR);
@@ -32,23 +33,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $id = $row["id"];
                         $name = $row["name"];
                         $hashed_password = $row["password"];
+                        $profile_picture = $row["profile_picture"];
+                        
                         if (password_verify($password, $hashed_password)) {
                             // Password is correct, so start a new session
                             session_regenerate_id();
                             $_SESSION["loggedin"] = true;
                             $_SESSION["user_id"] = $id;
                             $_SESSION["user_name"] = $name;
+                            $_SESSION["profile_picture"] = $profile_picture; // Save picture to session
 
                             // Redirect user to dashboard
                             header("location: dashboard.php");
                             exit;
                         } else {
-                            // Password is not valid
                             $error = "The password you entered was not valid.";
                         }
                     }
                 } else {
-                    // Email doesn't exist
                     $error = "No account found with that email.";
                 }
             } else {

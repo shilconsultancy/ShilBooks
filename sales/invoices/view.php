@@ -63,11 +63,10 @@ require_once '../../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Invoice: <?php echo htmlspecialchars($invoice['invoice_number']); ?></h1>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
             <a href="<?php echo BASE_PATH; ?>sales/invoices/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to All Invoices</a>
-            <a href="edit.php?id=<?php echo $invoice_id; ?>" class="px-4 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
-                <i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span>
-            </a>
+            <a href="edit.php?id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm"><i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span></a>
+            <a href="<?php echo BASE_PATH; ?>sales/credit-notes/create.php?from_invoice_id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm"><i data-feather="file-minus" class="w-4 h-4"></i><span>Create Credit Note</span></a>
         </div>
     </header>
 
@@ -136,8 +135,8 @@ require_once '../../partials/sidebar.php';
                             <tr>
                                 <td class="px-2 py-4 whitespace-nowrap text-sm"><div class="font-medium text-macgray-800"><?php echo htmlspecialchars($item['item_name']); ?></div><div class="text-macgray-500 text-xs"><?php echo htmlspecialchars($item['description']); ?></div></td>
                                 <td class="px-2 py-4 whitespace-nowrap text-sm text-center text-macgray-500"><?php echo htmlspecialchars($item['quantity']); ?></td>
-                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right text-macgray-500">৳<?php echo htmlspecialchars(number_format($item['price'], 2)); ?></td>
-                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right font-medium text-macgray-800">৳<?php echo htmlspecialchars(number_format($item['total'], 2)); ?></td>
+                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right text-macgray-500"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($item['price'], 2)); ?></td>
+                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right font-medium text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($item['total'], 2)); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -147,11 +146,11 @@ require_once '../../partials/sidebar.php';
                 <div class="flex justify-end mt-8">
                     <div class="w-full max-w-xs">
                         <div class="space-y-2">
-                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Subtotal</span><span class="text-sm text-macgray-800">৳<?php echo htmlspecialchars(number_format($invoice['subtotal'], 2)); ?></span></div>
-                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Tax</span><span class="text-sm text-macgray-800">৳<?php echo htmlspecialchars(number_format($invoice['tax'], 2)); ?></span></div>
-                            <div class="flex justify-between pt-2 border-t"><span class="font-bold text-macgray-900">Total</span><span class="font-bold text-macgray-900">৳<?php echo htmlspecialchars(number_format($invoice['total'], 2)); ?></span></div>
-                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Amount Paid</span><span class="text-sm text-macgray-800">- ৳<?php echo htmlspecialchars(number_format($invoice['amount_paid'], 2)); ?></span></div>
-                            <div class="flex justify-between mt-2 pt-2 border-t bg-macgray-50 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Balance Due</span><span class="text-base font-bold text-macgray-900">৳<?php echo htmlspecialchars(number_format($invoice['total'] - $invoice['amount_paid'], 2)); ?></span></div>
+                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Subtotal</span><span class="text-sm text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['subtotal'], 2)); ?></span></div>
+                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Tax</span><span class="text-sm text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['tax'], 2)); ?></span></div>
+                            <div class="flex justify-between pt-2 border-t"><span class="font-bold text-macgray-900">Total</span><span class="font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['total'], 2)); ?></span></div>
+                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Amount Paid</span><span class="text-sm text-macgray-800">- <?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['amount_paid'], 2)); ?></span></div>
+                            <div class="flex justify-between mt-2 pt-2 border-t bg-macgray-50 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Balance Due</span><span class="text-base font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['total'] - $invoice['amount_paid'], 2)); ?></span></div>
                         </div>
                     </div>
                 </div>

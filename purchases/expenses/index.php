@@ -27,20 +27,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = $_POST['amount'];
     $category_id = $_POST['category_id'];
     $vendor_id = !empty($_POST['vendor_id']) ? $_POST['vendor_id'] : null;
+    $description = trim($_POST['description']); // New description field
     $notes = trim($_POST['notes']);
     $edit_id = isset($_POST['edit_id']) ? (int)$_POST['edit_id'] : null;
 
-    if (empty($expense_date) || empty($amount) || empty($category_id) || !is_numeric($amount)) {
-        $errors[] = "Please fill all required fields with valid data.";
+    if (empty($expense_date) || empty($amount) || empty($category_id) || empty($description) || !is_numeric($amount)) {
+        $errors[] = "Date, amount, category, and description are required.";
     }
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE expenses SET expense_date = ?, amount = ?, category_id = ?, vendor_id = ?, notes = ? WHERE id = ? AND user_id = ?";
-            $params = [$expense_date, $amount, $category_id, $vendor_id, $notes, $edit_id, $userId];
+            $sql = "UPDATE expenses SET expense_date = ?, amount = ?, category_id = ?, vendor_id = ?, description = ?, notes = ? WHERE id = ? AND user_id = ?";
+            $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes, $edit_id, $userId];
         } else {
-            $sql = "INSERT INTO expenses (user_id, expense_date, amount, category_id, vendor_id, notes) VALUES (?, ?, ?, ?, ?, ?)";
-            $params = [$userId, $expense_date, $amount, $category_id, $vendor_id, $notes];
+            $sql = "INSERT INTO expenses (user_id, expense_date, amount, category_id, vendor_id, description, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $params = [$userId, $expense_date, $amount, $category_id, $vendor_id, $description, $notes];
         }
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($params)) {
@@ -95,8 +96,8 @@ require_once '../../partials/sidebar.php';
                         <thead class="bg-macgray-50">
                             <tr>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Description</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Category</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Vendor</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Amount</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-macgray-500 uppercase">Actions</th>
                             </tr>
@@ -108,16 +109,18 @@ require_once '../../partials/sidebar.php';
                                 <?php foreach ($expenses as $expense): ?>
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars(date("M d, Y", strtotime($expense['expense_date']))); ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo htmlspecialchars($expense['category_name']); ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($expense['vendor_name'] ?? 'N/A'); ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900">৳<?php echo htmlspecialchars(number_format($expense['amount'], 2)); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo htmlspecialchars($expense['description']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($expense['category_name']); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($expense['amount'], 2)); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button class="editBtn text-macblue-600 hover:text-macblue-900" 
+                                            <a href="view.php?id=<?php echo $expense['id']; ?>" class="text-green-600 hover:text-green-900">View</a>
+                                            <button class="editBtn text-macblue-600 hover:text-macblue-900 ml-4" 
                                                 data-id="<?php echo $expense['id']; ?>"
                                                 data-date="<?php echo htmlspecialchars($expense['expense_date']); ?>"
                                                 data-amount="<?php echo htmlspecialchars($expense['amount']); ?>"
                                                 data-category-id="<?php echo $expense['category_id']; ?>"
                                                 data-vendor-id="<?php echo $expense['vendor_id']; ?>"
+                                                data-description="<?php echo htmlspecialchars($expense['description']); ?>"
                                                 data-notes="<?php echo htmlspecialchars($expense['notes']); ?>">Edit</button>
                                             <a href="index.php?action=delete&id=<?php echo $expense['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
                                         </td>
@@ -142,33 +145,13 @@ require_once '../../partials/sidebar.php';
                     <div class="mt-4 space-y-4">
                         <input type="hidden" name="edit_id" id="edit_id">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="expense_date" class="block text-sm font-medium text-gray-700">Date*</label>
-                                <input type="date" name="expense_date" id="expense_date" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
-                            <div>
-                                <label for="amount" class="block text-sm font-medium text-gray-700">Amount*</label>
-                                <input type="number" name="amount" id="amount" required step="0.01" placeholder="0.00" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                            </div>
+                            <div><label for="expense_date" class="block text-sm font-medium text-gray-700">Date*</label><input type="date" name="expense_date" id="expense_date" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
+                            <div><label for="amount" class="block text-sm font-medium text-gray-700">Amount*</label><input type="number" name="amount" id="amount" required step="0.01" placeholder="0.00" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
                         </div>
-                        <div>
-                            <label for="category_id" class="block text-sm font-medium text-gray-700">Category*</label>
-                            <select name="category_id" id="category_id" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <option value="">Select a category...</option>
-                                <?php foreach($categories as $cat) echo "<option value='{$cat['id']}'>".htmlspecialchars($cat['name'])."</option>"; ?>
-                            </select>
-                        </div>
-                         <div>
-                            <label for="vendor_id" class="block text-sm font-medium text-gray-700">Vendor (Optional)</label>
-                            <select name="vendor_id" id="vendor_id" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
-                                <option value="">None</option>
-                                <?php foreach($vendors as $ven) echo "<option value='{$ven['id']}'>".htmlspecialchars($ven['name'])."</option>"; ?>
-                            </select>
-                        </div>
-                        <div>
-                            <label for="notes" class="block text-sm font-medium text-gray-700">Notes</label>
-                            <textarea name="notes" id="notes" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
-                        </div>
+                        <div><label for="description" class="block text-sm font-medium text-gray-700">Description*</label><input type="text" name="description" id="description" required placeholder="e.g., Office Lunch" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
+                        <div><label for="category_id" class="block text-sm font-medium text-gray-700">Category*</label><select name="category_id" id="category_id" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"><option value="">Select a category...</option><?php foreach($categories as $cat) echo "<option value='{$cat['id']}'>".htmlspecialchars($cat['name'])."</option>"; ?></select></div>
+                         <div><label for="vendor_id" class="block text-sm font-medium text-gray-700">Vendor (Optional)</label><select name="vendor_id" id="vendor_id" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"><option value="">None</option><?php foreach($vendors as $ven) echo "<option value='{$ven['id']}'>".htmlspecialchars($ven['name'])."</option>"; ?></select></div>
+                        <div><label for="notes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label><textarea name="notes" id="notes" rows="2" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea></div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -210,6 +193,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('amount').value = btn.dataset.amount;
             document.getElementById('category_id').value = btn.dataset.categoryId;
             document.getElementById('vendor_id').value = btn.dataset.vendorId;
+            document.getElementById('description').value = btn.dataset.description;
             document.getElementById('notes').value = btn.dataset.notes;
             openModal();
         });

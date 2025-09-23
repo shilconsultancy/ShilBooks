@@ -1,11 +1,9 @@
 <?php
-// Since this file is in a subdirectory, we need to go up one level to find the config
 require_once '../config.php';
 
-// Security Check: Redirect to index if not logged in
+// Security Check
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
-    // We need to go up one level to find the index.php (login page)
-    header("location: ../index.php");
+    header("location: " . BASE_PATH . "index.php");
     exit;
 }
 
@@ -18,7 +16,6 @@ $edit_id = null;
 
 // Handle POST request (Add or Edit an Item)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Sanitize and validate inputs
     $name = trim($_POST['name']);
     $description = trim($_POST['description']);
     $sale_price = filter_var($_POST['sale_price'], FILTER_VALIDATE_FLOAT);
@@ -26,30 +23,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $quantity = isset($_POST['quantity']) ? filter_var($_POST['quantity'], FILTER_VALIDATE_INT) : 0;
     $edit_id = isset($_POST['edit_id']) ? (int)$_POST['edit_id'] : null;
 
-    if (empty($name)) {
-        $errors[] = "Item name is required.";
-    }
-    if (empty($item_type) || !in_array($item_type, ['product', 'service'])) {
-        $errors[] = "Invalid item type selected.";
-    }
-    if ($sale_price === false || $sale_price < 0) {
-        $errors[] = "Invalid sale price.";
-    }
+    if (empty($name)) { $errors[] = "Item name is required."; }
+    if (empty($item_type) || !in_array($item_type, ['product', 'service'])) { $errors[] = "Invalid item type selected.";}
+    if ($sale_price === false || $sale_price < 0) { $errors[] = "Invalid sale price."; }
 
-    // --- FIXED VALIDATION FOR PURCHASE PRICE ---
     $purchase_price_input = trim($_POST['purchase_price']);
     if (empty($purchase_price_input)) {
-        $purchase_price = 0.00; // Default to 0 if the field is empty
+        $purchase_price = 0.00;
     } else {
         $purchase_price = filter_var($purchase_price_input, FILTER_VALIDATE_FLOAT);
-        // Only validate if a value was actually entered
         if ($purchase_price === false || $purchase_price < 0) {
             $errors[] = "If provided, the purchase price must be a valid number.";
         }
     }
-    // --- END FIX ---
 
-    // If it's a product, quantity is required. If service, quantity is 0.
     if ($item_type === 'product') {
         if ($quantity === false || $quantity < 0) {
             $errors[] = "Invalid quantity for a product.";
@@ -60,12 +47,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            // Update existing item
             $sql = "UPDATE items SET name = :name, description = :description, item_type = :item_type, sale_price = :sale_price, purchase_price = :purchase_price, quantity = :quantity WHERE id = :id AND user_id = :user_id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':id', $edit_id, PDO::PARAM_INT);
         } else {
-            // Insert new item
             $sql = "INSERT INTO items (user_id, name, description, item_type, sale_price, purchase_price, quantity) VALUES (:user_id, :name, :description, :item_type, :sale_price, :purchase_price, :quantity)";
             $stmt = $pdo->prepare($sql);
         }
@@ -159,7 +144,7 @@ require_once '../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo htmlspecialchars($item['name']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><span class="px-2 py-1 text-xs font-medium rounded-full <?php echo ($item['item_type'] == 'product') ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'; ?>"><?php echo htmlspecialchars(ucfirst($item['item_type'])); ?></span></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars(substr($item['description'], 0, 40)) . (strlen($item['description']) > 40 ? '...' : ''); ?></td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500">৳<?php echo htmlspecialchars(number_format($item['sale_price'], 2)); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($item['sale_price'], 2)); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-semibold <?php echo ($item['quantity'] <= 0 && $item['item_type'] == 'product') ? 'text-red-500' : 'text-macgray-800'; ?>"><?php echo ($item['item_type'] == 'product') ? htmlspecialchars($item['quantity']) : 'N/A'; ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button class="editItemBtn text-macblue-600 hover:text-macblue-900" 
@@ -192,50 +177,23 @@ require_once '../partials/sidebar.php';
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <form action="index.php" method="POST">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                    <div class="sm:flex sm:items-start">
-                        <div class="w-full">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Add New Item</h3>
-                            <div class="mt-4 space-y-4">
-                                <input type="hidden" name="edit_id" id="edit_id">
-                                
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700">Item Type*</label>
-                                    <div class="mt-2 flex space-x-4" id="itemTypeSelector">
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" class="form-radio" name="item_type" value="product" checked>
-                                            <span class="ml-2">Product</span>
-                                        </label>
-                                        <label class="inline-flex items-center">
-                                            <input type="radio" class="form-radio" name="item_type" value="service">
-                                            <span class="ml-2">Service</span>
-                                        </label>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label for="name" class="block text-sm font-medium text-gray-700">Name*</label>
-                                    <input type="text" name="name" id="name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-macblue-500 focus:border-macblue-500">
-                                </div>
-                                <div>
-                                    <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                                    <textarea name="description" id="description" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-macblue-500 focus:border-macblue-500"></textarea>
-                                </div>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label for="sale_price" class="block text-sm font-medium text-gray-700">Sale Price*</label>
-                                        <input type="number" name="sale_price" id="sale_price" step="0.01" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-macblue-500 focus:border-macblue-500">
-                                    </div>
-                                    <div>
-                                        <label for="purchase_price" class="block text-sm font-medium text-gray-700">Purchase Price</label>
-                                        <input type="number" name="purchase_price" id="purchase_price" step="0.01" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-macblue-500 focus:border-macblue-500">
-                                    </div>
-                                </div>
-                                <div id="quantityWrapper">
-                                    <label for="quantity" class="block text-sm font-medium text-gray-700">Quantity on Hand*</label>
-                                    <input type="number" name="quantity" id="quantity" step="1" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-macblue-500 focus:border-macblue-500">
-                                </div>
+                    <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Add New Item</h3>
+                    <div class="mt-4 space-y-4">
+                        <input type="hidden" name="edit_id" id="edit_id">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">Item Type*</label>
+                            <div class="mt-2 flex space-x-4" id="itemTypeSelector">
+                                <label class="inline-flex items-center"><input type="radio" class="form-radio" name="item_type" value="product" checked><span class="ml-2">Product</span></label>
+                                <label class="inline-flex items-center"><input type="radio" class="form-radio" name="item_type" value="service"><span class="ml-2">Service</span></label>
                             </div>
                         </div>
+                        <div><label for="name" class="block text-sm font-medium text-gray-700">Name*</label><input type="text" name="name" id="name" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
+                        <div><label for="description" class="block text-sm font-medium text-gray-700">Description</label><textarea name="description" id="description" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div><label for="sale_price" class="block text-sm font-medium text-gray-700">Sale Price*</label><input type="number" name="sale_price" id="sale_price" step="0.01" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
+                            <div><label for="purchase_price" class="block text-sm font-medium text-gray-700">Purchase Price</label><input type="number" name="purchase_price" id="purchase_price" step="0.01" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
+                        </div>
+                        <div id="quantityWrapper"><label for="quantity" class="block text-sm font-medium text-gray-700">Quantity on Hand*</label><input type="number" name="quantity" id="quantity" step="1" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></div>
                     </div>
                 </div>
                 <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
@@ -253,8 +211,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const addItemBtn = document.getElementById('addItemBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
     const editItemBtns = document.querySelectorAll('.editItemBtn');
-
-    // Form fields and wrappers
     const modalTitle = document.getElementById('modalTitle');
     const editIdField = document.getElementById('edit_id');
     const nameField = document.getElementById('name');
@@ -275,27 +231,20 @@ document.addEventListener('DOMContentLoaded', function () {
             quantityField.required = false;
         }
     }
-
     itemTypeRadios.forEach(radio => radio.addEventListener('change', toggleQuantityField));
 
     function openModal() { modal.classList.remove('hidden'); }
-    function closeModal() { modal.classList.add('hidden'); resetForm(); }
+    function closeModal() { modal.classList.add('hidden'); document.querySelector('#itemModal form').reset(); }
     
     function resetForm() {
-        document.querySelector('form').reset();
+        document.querySelector('#itemModal form').reset();
         modalTitle.innerText = 'Add New Item';
         editIdField.value = '';
         document.querySelector('input[name="item_type"][value="product"]').checked = true;
         toggleQuantityField();
     }
-
-    addItemBtn.addEventListener('click', () => {
-        resetForm();
-        openModal();
-    });
-
+    addItemBtn.addEventListener('click', () => { resetForm(); openModal(); });
     closeModalBtn.addEventListener('click', closeModal);
-
     editItemBtns.forEach(btn => {
         btn.addEventListener('click', () => {
             resetForm();
@@ -306,16 +255,13 @@ document.addEventListener('DOMContentLoaded', function () {
             salePriceField.value = btn.dataset.salePrice;
             purchasePriceField.value = btn.dataset.purchasePrice;
             quantityField.value = btn.dataset.quantity;
-
-            // Set the correct radio button
             document.querySelector(`input[name="item_type"][value="${btn.dataset.itemType}"]`).checked = true;
-            toggleQuantityField(); // Show/hide quantity field based on the item's type
+            toggleQuantityField();
             openModal();
         });
     });
 });
 </script>
-
 
 <?php
 require_once '../partials/footer.php';

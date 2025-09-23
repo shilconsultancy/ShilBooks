@@ -17,42 +17,66 @@ $userId = $_SESSION['user_id'];
 
 // --- Dashboard Data Fetching ---
 
-// 1. Calculate Gross Revenue (Paid Invoices + Sales Receipts)
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE user_id = ? AND status = 'paid'");
-$paid_invoices_total_stmt->execute([$userId]);
-$grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+// Helper function to calculate Net Revenue for a given period
+function getNetRevenueForPeriod($pdo, $userId, $startDate, $endDate) {
+    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE user_id = ? AND status = 'paid' AND invoice_date BETWEEN ? AND ?");
+    $paid_invoices_total_stmt->execute([$userId, $startDate, $endDate]);
+    $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
 
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE user_id = ?");
-$receipts_total_stmt->execute([$userId]);
-$grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
+    $receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE user_id = ? AND receipt_date BETWEEN ? AND ?");
+    $receipts_total_stmt->execute([$userId, $startDate, $endDate]);
+    $grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
 
-// 2. Subtract all Credit Notes to get Net Revenue
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE user_id = ?");
-$credit_notes_stmt->execute([$userId]);
-$totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE user_id = ? AND credit_note_date BETWEEN ? AND ?");
+    $credit_notes_stmt->execute([$userId, $startDate, $endDate]);
+    $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    
+    return $grossRevenue - $totalCredits;
+}
 
-$netRevenue = $grossRevenue - $totalCredits;
+// Helper function to calculate Expenses for a given period
+function getExpensesForPeriod($pdo, $userId, $startDate, $endDate) {
+    $expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND expense_date BETWEEN ? AND ?");
+    $expenses_stmt->execute([$userId, $startDate, $endDate]);
+    return $expenses_stmt->fetchColumn() ?? 0;
+}
 
-// 3. Outstanding Amount (Unpaid Invoices)
+// Helper function to format percentage change
+function formatPercentageChange($current, $previous) {
+    if ($previous == 0) {
+        if ($current > 0) return '<span class="text-green-500">New</span>';
+        return '<span class="text-macgray-500">-</span>';
+    }
+    $percentage = (($current - $previous) / abs($previous)) * 100;
+    $color = $percentage >= 0 ? 'green' : 'red';
+    $icon = $percentage >= 0 ? 'trending-up' : 'trending-down';
+    return '<span class="text-'.$color.'-500 flex items-center"><i data-feather="'.$icon.'" class="w-3 h-3 mr-1"></i> ' . round(abs($percentage)) . '%</span>';
+}
+
+
+// --- Calculations ---
+$start_this_month = date('Y-m-01');
+$end_this_month = date('Y-m-t');
+$start_last_month = date('Y-m-01', strtotime('first day of last month'));
+$end_last_month = date('Y-m-t', strtotime('last day of last month'));
+
+$revenue_this_month = getNetRevenueForPeriod($pdo, $userId, $start_this_month, $end_this_month);
+$expenses_this_month = getExpensesForPeriod($pdo, $userId, $start_this_month, $end_this_month);
+$profit_this_month = $revenue_this_month - $expenses_this_month;
+
+$revenue_last_month = getNetRevenueForPeriod($pdo, $userId, $start_last_month, $end_last_month);
+$expenses_last_month = getExpensesForPeriod($pdo, $userId, $start_last_month, $end_last_month);
+$profit_last_month = $revenue_last_month - $expenses_last_month;
+
 $outstanding_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE user_id = ? AND status IN ('sent', 'overdue')");
 $outstanding_stmt->execute([$userId]);
 $outstandingAmount = $outstanding_stmt->fetchColumn() ?? 0;
 
-// 4. Expenses (All-time)
-$expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE user_id = ?");
-$expenses_stmt->execute([$userId]);
-$expensesAmount = $expenses_stmt->fetchColumn() ?? 0;
-
-// 5. Profit (Net Revenue - Expenses)
-$profitAmount = $netRevenue - $expensesAmount;
-
-// 6. Recent Invoices (Last 5)
 $recent_invoices_sql = "SELECT i.*, c.name as customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.user_id = ? ORDER BY i.invoice_date DESC, i.id DESC LIMIT 5";
 $recent_invoices_stmt = $pdo->prepare($recent_invoices_sql);
 $recent_invoices_stmt->execute([$userId]);
 $recentInvoices = $recent_invoices_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 7. Recent Activity (Last 5 Payments or Expenses)
 $activity = [];
 $payments_sql = "SELECT p.amount, p.payment_date as date, c.name as customer_name FROM payments p JOIN customers c ON p.customer_id = c.id WHERE p.user_id = ? ORDER BY p.payment_date DESC LIMIT 3";
 $payments_stmt = $pdo->prepare($payments_sql);
@@ -111,8 +135,9 @@ function getInvoiceStatusBadge($status) {
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-macgray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-macgray-500">Net Revenue</p>
-                            <p class="text-2xl font-semibold text-macgray-800 mt-1">৳<?php echo number_format($netRevenue, 2); ?></p>
+                            <p class="text-sm font-medium text-macgray-500">Net Revenue (This Month)</p>
+                            <p class="text-2xl font-semibold text-macgray-800 mt-1"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($revenue_this_month, 2); ?></p>
+                            <p class="text-xs mt-1"><?php echo formatPercentageChange($revenue_this_month, $revenue_last_month); ?> from last month</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center"><i data-feather="dollar-sign" class="text-green-500"></i></div>
                     </div>
@@ -120,8 +145,9 @@ function getInvoiceStatusBadge($status) {
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-macgray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-macgray-500">Outstanding</p>
-                            <p class="text-2xl font-semibold text-macgray-800 mt-1">৳<?php echo number_format($outstandingAmount, 2); ?></p>
+                            <p class="text-sm font-medium text-macgray-500">Outstanding (All Time)</p>
+                            <p class="text-2xl font-semibold text-macgray-800 mt-1"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($outstandingAmount, 2); ?></p>
+                            <p class="text-xs text-macgray-400 mt-1">Total amount owed</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center"><i data-feather="alert-circle" class="text-red-500"></i></div>
                     </div>
@@ -129,8 +155,9 @@ function getInvoiceStatusBadge($status) {
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-macgray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-macgray-500">Expenses</p>
-                            <p class="text-2xl font-semibold text-macgray-800 mt-1">৳<?php echo number_format($expensesAmount, 2); ?></p>
+                            <p class="text-sm font-medium text-macgray-500">Expenses (This Month)</p>
+                            <p class="text-2xl font-semibold text-macgray-800 mt-1"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($expenses_this_month, 2); ?></p>
+                            <p class="text-xs mt-1"><?php echo formatPercentageChange($expenses_this_month, $expenses_last_month); ?> from last month</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center"><i data-feather="credit-card" class="text-yellow-500"></i></div>
                     </div>
@@ -138,14 +165,15 @@ function getInvoiceStatusBadge($status) {
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-macgray-200">
                     <div class="flex items-center justify-between">
                         <div>
-                            <p class="text-sm font-medium text-macgray-500">Profit</p>
-                            <p class="text-2xl font-semibold text-macgray-800 mt-1">৳<?php echo number_format($profitAmount, 2); ?></p>
+                            <p class="text-sm font-medium text-macgray-500">Profit (This Month)</p>
+                            <p class="text-2xl font-semibold text-macgray-800 mt-1"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($profit_this_month, 2); ?></p>
+                             <p class="text-xs mt-1"><?php echo formatPercentageChange($profit_this_month, $profit_last_month); ?> from last month</p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center"><i data-feather="bar-chart-2" class="text-blue-500"></i></div>
                     </div>
                 </div>
             </div>
-
+            
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div class="bg-white rounded-xl shadow-sm p-6 border border-macgray-200">
                     <h3 class="text-lg font-semibold text-macgray-800 mb-4">Recent Activity</h3>
@@ -158,13 +186,13 @@ function getInvoiceStatusBadge($status) {
                                 <?php if($activity['type'] == 'payment'): ?>
                                     <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3 flex-shrink-0"><i data-feather="dollar-sign" class="text-green-500 w-4 h-4"></i></div>
                                     <div>
-                                        <p class="text-sm font-medium text-macgray-800">Payment of ৳<?php echo number_format($activity['data']['amount'], 2); ?> received</p>
+                                        <p class="text-sm font-medium text-macgray-800">Payment of <?php echo CURRENCY_SYMBOL; ?><?php echo number_format($activity['data']['amount'], 2); ?> received</p>
                                         <p class="text-xs text-macgray-500 mt-1"><?php echo htmlspecialchars($activity['data']['customer_name']); ?> • <?php echo $activity['date']->format('M d, Y'); ?></p>
                                     </div>
                                 <?php elseif($activity['type'] == 'expense'): ?>
                                     <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center mr-3 flex-shrink-0"><i data-feather="credit-card" class="text-yellow-500 w-4 h-4"></i></div>
                                     <div>
-                                        <p class="text-sm font-medium text-macgray-800">Expense of ৳<?php echo number_format($activity['data']['amount'], 2); ?> recorded</p>
+                                        <p class="text-sm font-medium text-macgray-800">Expense of <?php echo CURRENCY_SYMBOL; ?><?php echo number_format($activity['data']['amount'], 2); ?> recorded</p>
                                         <p class="text-xs text-macgray-500 mt-1"><?php echo htmlspecialchars($activity['data']['category_name']); ?> • <?php echo $activity['date']->format('M d, Y'); ?></p>
                                     </div>
                                 <?php endif; ?>
@@ -194,7 +222,7 @@ function getInvoiceStatusBadge($status) {
                                     <tr>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm font-medium text-macgray-800"><?php echo htmlspecialchars($invoice['invoice_number']); ?></td>
                                         <td class="px-4 py-3 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($invoice['customer_name']); ?></td>
-                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-macgray-500">৳<?php echo number_format($invoice['total'], 2); ?></td>
+                                        <td class="px-4 py-3 whitespace-nowrap text-sm text-macgray-500"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($invoice['total'], 2); ?></td>
                                         <td class="px-4 py-3 whitespace-nowrap">
                                             <span class="px-2 py-1 text-xs font-medium rounded-full <?php echo getInvoiceStatusBadge($invoice['status']); ?>">
                                                 <?php echo htmlspecialchars(ucfirst($invoice['status'])); ?>
