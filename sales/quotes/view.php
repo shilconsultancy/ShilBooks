@@ -68,6 +68,9 @@ require_once '../../partials/sidebar.php';
             <a href="edit.php?id=<?php echo $quote_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm">
                 <i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span>
             </a>
+            <a href="print.php?id=<?php echo $quote_id; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i><span>Print</span>
+            </a>
         </div>
     </header>
 

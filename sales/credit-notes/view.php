@@ -26,7 +26,13 @@ require_once '../../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Credit Note: <?php echo htmlspecialchars($credit_note['credit_note_number']); ?></h1>
-        <a href="<?php echo BASE_PATH; ?>sales/credit-notes/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to List</a>
+        <div class="flex items-center space-x-2">
+            <a href="<?php echo BASE_PATH; ?>sales/credit-notes/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to List</a>
+            <a href="print.php?id=<?php echo $cn_id; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i>
+                <span>Print</span>
+            </a>
+        </div>
     </header>
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
@@ -54,7 +60,7 @@ require_once '../../partials/sidebar.php';
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-macgray-500">Amount</p>
-                        <p class="text-2xl font-bold text-green-600">৳<?php echo htmlspecialchars(number_format($credit_note['amount'], 2)); ?></p>
+                        <p class="text-2xl font-bold text-green-600"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($credit_note['amount'], 2)); ?></p>
                     </div>
                      <div>
                         <p class="text-sm font-semibold text-macgray-500">Notes</p>

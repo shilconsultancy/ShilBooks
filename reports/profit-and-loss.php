@@ -55,7 +55,12 @@ require_once '../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Profit & Loss Statement</h1>
-        <a href="<?php echo BASE_PATH; ?>reports/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to Reports</a>
+        <div class="flex items-center space-x-2">
+            <a href="<?php echo BASE_PATH; ?>reports/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to Reports</a>
+            <a href="profit-and-loss-print.php?start_date=<?php echo $start_date; ?>&end_date=<?php echo $end_date; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i><span>Print</span>
+            </a>
+        </div>
     </header>
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
@@ -88,16 +93,16 @@ require_once '../partials/sidebar.php';
                     <div class="mt-4 space-y-2 text-sm">
                         <div class="flex justify-between">
                             <span class="text-macgray-600">Gross Sales (Invoices + Receipts)</span>
-                            <span>৳<?php echo number_format($grossRevenue, 2); ?></span>
+                            <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grossRevenue, 2); ?></span>
                         </div>
                         <div class="flex justify-between">
                             <span class="text-macgray-600">Less: Returns & Allowances (Credit Notes)</span>
-                            <span>(৳<?php echo number_format($totalCredits, 2); ?>)</span>
+                            <span>(<?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalCredits, 2); ?>)</span>
                         </div>
                     </div>
                     <div class="flex justify-between mt-4 pt-2 border-t font-bold">
                         <span>Net Revenue</span>
-                        <span>৳<?php echo number_format($netRevenue, 2); ?></span>
+                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netRevenue, 2); ?></span>
                     </div>
                 </div>
 
@@ -110,21 +115,21 @@ require_once '../partials/sidebar.php';
                             <?php foreach($expensesByCategory as $expense): ?>
                             <div class="flex justify-between">
                                 <span class="text-macgray-600"><?php echo htmlspecialchars($expense['category_name']); ?></span>
-                                <span>৳<?php echo number_format($expense['total_amount'], 2); ?></span>
+                                <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($expense['total_amount'], 2); ?></span>
                             </div>
                             <?php endforeach; ?>
                          <?php endif; ?>
                     </div>
                      <div class="flex justify-between mt-4 pt-2 border-t font-bold">
                         <span>Total Expenses</span>
-                        <span>৳<?php echo number_format($totalExpenses, 2); ?></span>
+                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalExpenses, 2); ?></span>
                     </div>
                 </div>
 
                 <div class="mt-8 pt-4 border-t-2 border-macgray-800">
                     <div class="flex justify-between font-bold text-xl <?php echo $netProfit >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
                         <span>Net Profit / (Loss)</span>
-                        <span>৳<?php echo number_format($netProfit, 2); ?></span>
+                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netProfit, 2); ?></span>
                     </div>
                 </div>
             </div>

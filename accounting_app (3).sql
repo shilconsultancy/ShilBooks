@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 24, 2025 at 01:39 AM
+-- Generation Time: Sep 25, 2025 at 12:06 AM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -38,13 +38,6 @@ CREATE TABLE `bank_accounts` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `bank_accounts`
---
-
-INSERT INTO `bank_accounts` (`id`, `user_id`, `account_name`, `bank_name`, `account_number`, `initial_balance`, `current_balance`, `created_at`) VALUES
-(1, 1, 'Saikat Kumar Shil', 'NCC', '896875678', 1000.00, 31000.00, '2025-09-23 11:16:11');
-
 -- --------------------------------------------------------
 
 --
@@ -62,13 +55,6 @@ CREATE TABLE `bank_transactions` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `bank_transactions`
---
-
-INSERT INTO `bank_transactions` (`id`, `user_id`, `account_id`, `transaction_date`, `description`, `type`, `amount`, `created_at`) VALUES
-(1, 1, 1, '2025-09-23', 'investment', 'deposit', 30000.00, '2025-09-23 11:16:32');
-
 -- --------------------------------------------------------
 
 --
@@ -84,27 +70,6 @@ CREATE TABLE `chart_of_accounts` (
   `is_editable` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `chart_of_accounts`
---
-
-INSERT INTO `chart_of_accounts` (`id`, `user_id`, `account_name`, `account_type`, `description`, `is_editable`, `created_at`) VALUES
-(1, 1, 'Cash on Hand', 'Asset', NULL, 1, '2025-09-23 20:37:07'),
-(2, 1, 'Checking Account', 'Asset', NULL, 1, '2025-09-23 20:37:07'),
-(3, 1, 'Accounts Receivable', 'Asset', NULL, 0, '2025-09-23 20:37:07'),
-(4, 1, 'Inventory Asset', 'Asset', NULL, 0, '2025-09-23 20:37:07'),
-(5, 1, 'Accounts Payable', 'Liability', NULL, 1, '2025-09-23 20:37:07'),
-(6, 1, 'Credit Card', 'Liability', NULL, 1, '2025-09-23 20:37:07'),
-(7, 1, 'Owner\'s Equity', 'Equity', NULL, 1, '2025-09-23 20:37:07'),
-(8, 1, 'Retained Earnings', 'Equity', NULL, 1, '2025-09-23 20:37:07'),
-(9, 1, 'Sales Revenue', 'Revenue', NULL, 1, '2025-09-23 20:37:07'),
-(10, 1, 'Service Revenue', 'Revenue', NULL, 1, '2025-09-23 20:37:07'),
-(11, 1, 'Advertising', 'Expense', NULL, 1, '2025-09-23 20:37:07'),
-(12, 1, 'Bank Fees', 'Expense', NULL, 1, '2025-09-23 20:37:07'),
-(13, 1, 'Office Supplies', 'Expense', NULL, 1, '2025-09-23 20:37:07'),
-(14, 1, 'Rent Expense', 'Expense', NULL, 1, '2025-09-23 20:37:07'),
-(15, 1, 'Utilities', 'Expense', NULL, 1, '2025-09-23 20:37:07');
 
 -- --------------------------------------------------------
 
@@ -124,14 +89,6 @@ CREATE TABLE `credit_notes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `credit_notes`
---
-
-INSERT INTO `credit_notes` (`id`, `user_id`, `customer_id`, `invoice_id`, `credit_note_number`, `credit_note_date`, `amount`, `notes`, `created_at`) VALUES
-(1, 1, 3, 1, 'CN-0001', '2025-09-23', 15000.00, '', '2025-09-23 10:26:16'),
-(2, 1, 3, 3, 'CN-0002', '2025-09-24', 5000.00, '', '2025-09-23 23:12:38');
-
 -- --------------------------------------------------------
 
 --
@@ -147,13 +104,6 @@ CREATE TABLE `credit_note_items` (
   `price` decimal(10,2) NOT NULL DEFAULT 0.00,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `credit_note_items`
---
-
-INSERT INTO `credit_note_items` (`id`, `credit_note_id`, `item_id`, `description`, `quantity`, `price`, `total`) VALUES
-(1, 1, 2, '', 1, 0.00, 0.00);
 
 -- --------------------------------------------------------
 
@@ -172,14 +122,6 @@ CREATE TABLE `customers` (
   `address` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `customers`
---
-
-INSERT INTO `customers` (`id`, `user_id`, `customer_type`, `name`, `contact_person`, `email`, `phone`, `address`, `created_at`) VALUES
-(3, 1, 'company', 'ABC Corp', 'sample', 'sample@abc.com', '098765432', 'cjdsjkc, sdvdsvc, vdsvs', '2025-09-23 06:26:41'),
-(4, 1, 'individual', 'Martin', NULL, 'martin@dsc.com', '097986897', 'nkdsjbvkjdsb', '2025-09-23 06:26:56');
 
 -- --------------------------------------------------------
 
@@ -217,13 +159,6 @@ CREATE TABLE `expenses` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `expenses`
---
-
-INSERT INTO `expenses` (`id`, `user_id`, `category_id`, `vendor_id`, `description`, `expense_date`, `amount`, `notes`, `created_at`) VALUES
-(1, 1, 1, NULL, 'Lunch', '2025-09-23', 2000.00, 'lunch', '2025-09-23 10:38:58');
-
 -- --------------------------------------------------------
 
 --
@@ -235,13 +170,6 @@ CREATE TABLE `expense_categories` (
   `user_id` int(11) NOT NULL,
   `name` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `expense_categories`
---
-
-INSERT INTO `expense_categories` (`id`, `user_id`, `name`) VALUES
-(1, 1, 'Petty Cash');
 
 -- --------------------------------------------------------
 
@@ -266,15 +194,6 @@ CREATE TABLE `invoices` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `invoices`
---
-
-INSERT INTO `invoices` (`id`, `user_id`, `customer_id`, `invoice_number`, `invoice_date`, `due_date`, `tax_rate_id`, `subtotal`, `tax`, `total`, `amount_paid`, `notes`, `status`, `created_at`) VALUES
-(1, 1, 3, 'INV-0001', '2025-09-23', '2025-10-23', NULL, 50000.00, 0.00, 50000.00, 50000.00, '', 'paid', '2025-09-23 07:22:21'),
-(2, 1, 3, 'INV-0002', '2025-03-05', '2025-04-23', NULL, 250000.00, 0.00, 250000.00, 250000.00, '', 'paid', '2025-09-23 20:55:23'),
-(3, 1, 3, 'INV-0003', '2025-09-24', '2025-10-24', NULL, 50000.00, 0.00, 50000.00, 50000.00, '', 'paid', '2025-09-23 22:30:08');
-
 -- --------------------------------------------------------
 
 --
@@ -291,15 +210,6 @@ CREATE TABLE `invoice_items` (
   `total` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `invoice_items`
---
-
-INSERT INTO `invoice_items` (`id`, `invoice_id`, `item_id`, `description`, `quantity`, `price`, `total`) VALUES
-(2, 1, 2, '', 1, 50000.00, 50000.00),
-(4, 2, 2, '', 5, 50000.00, 250000.00),
-(6, 3, 2, '', 1, 50000.00, 50000.00);
-
 -- --------------------------------------------------------
 
 --
@@ -312,16 +222,6 @@ CREATE TABLE `invoice_payments` (
   `invoice_id` int(11) NOT NULL,
   `amount_applied` decimal(10,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `invoice_payments`
---
-
-INSERT INTO `invoice_payments` (`id`, `payment_id`, `invoice_id`, `amount_applied`) VALUES
-(2, 2, 1, 20000.00),
-(3, 3, 1, 15000.00),
-(4, 4, 2, 250000.00),
-(5, 5, 3, 45000.00);
 
 -- --------------------------------------------------------
 
@@ -341,13 +241,6 @@ CREATE TABLE `items` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `items`
---
-
-INSERT INTO `items` (`id`, `user_id`, `item_type`, `name`, `description`, `sale_price`, `purchase_price`, `quantity`, `created_at`) VALUES
-(2, 1, 'service', 'Wordpress Web Development', '', 50000.00, 0.00, 0, '2025-09-23 06:06:58');
-
 -- --------------------------------------------------------
 
 --
@@ -362,13 +255,6 @@ CREATE TABLE `journal_entries` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `journal_entries`
---
-
-INSERT INTO `journal_entries` (`id`, `user_id`, `entry_date`, `description`, `created_at`) VALUES
-(1, 1, '2025-09-23', 'Test', '2025-09-23 20:44:21');
-
 -- --------------------------------------------------------
 
 --
@@ -382,14 +268,6 @@ CREATE TABLE `journal_entry_items` (
   `type` enum('debit','credit') NOT NULL,
   `amount` decimal(15,2) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `journal_entry_items`
---
-
-INSERT INTO `journal_entry_items` (`id`, `journal_entry_id`, `account_id`, `type`, `amount`) VALUES
-(1, 1, 6, 'debit', 100.00),
-(2, 1, 12, 'credit', 100.00);
 
 -- --------------------------------------------------------
 
@@ -407,16 +285,6 @@ CREATE TABLE `payments` (
   `notes` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `payments`
---
-
-INSERT INTO `payments` (`id`, `user_id`, `customer_id`, `payment_date`, `amount`, `payment_method`, `notes`, `created_at`) VALUES
-(2, 1, 3, '2025-09-23', 20000.00, '', '', '2025-09-23 09:18:48'),
-(3, 1, 3, '2025-09-23', 15000.00, 'Cash', '', '2025-09-23 09:21:56'),
-(4, 1, 3, '2025-09-24', 250000.00, '', '', '2025-09-23 23:12:02'),
-(5, 1, 3, '2025-09-24', 45000.00, '', '', '2025-09-23 23:12:25');
 
 -- --------------------------------------------------------
 
@@ -440,13 +308,6 @@ CREATE TABLE `quotes` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `quotes`
---
-
-INSERT INTO `quotes` (`id`, `user_id`, `customer_id`, `quote_number`, `quote_date`, `expiry_date`, `tax_rate_id`, `subtotal`, `tax`, `total`, `notes`, `status`, `created_at`) VALUES
-(3, 1, 3, 'QUO-0001', '2025-09-23', NULL, NULL, 100000.00, 0.00, 100000.00, '', 'sent', '2025-09-23 06:34:28');
-
 -- --------------------------------------------------------
 
 --
@@ -462,13 +323,6 @@ CREATE TABLE `quote_items` (
   `price` decimal(10,2) NOT NULL DEFAULT 0.00,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `quote_items`
---
-
-INSERT INTO `quote_items` (`id`, `quote_id`, `item_id`, `description`, `quantity`, `price`, `total`) VALUES
-(4, 3, 2, '', 2, 50000.00, 100000.00);
 
 -- --------------------------------------------------------
 
@@ -492,13 +346,6 @@ CREATE TABLE `recurring_invoices` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `recurring_invoices`
---
-
-INSERT INTO `recurring_invoices` (`id`, `user_id`, `customer_id`, `start_date`, `end_date`, `frequency`, `last_generated_date`, `subtotal`, `tax`, `total`, `notes`, `status`, `created_at`) VALUES
-(2, 1, 3, '2025-09-23', NULL, 'monthly', NULL, 50000.00, 0.00, 50000.00, '', 'active', '2025-09-23 07:57:26');
-
 -- --------------------------------------------------------
 
 --
@@ -514,13 +361,6 @@ CREATE TABLE `recurring_invoice_items` (
   `price` decimal(10,2) NOT NULL DEFAULT 0.00,
   `total` decimal(10,2) NOT NULL DEFAULT 0.00
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `recurring_invoice_items`
---
-
-INSERT INTO `recurring_invoice_items` (`id`, `recurring_invoice_id`, `item_id`, `description`, `quantity`, `price`, `total`) VALUES
-(2, 2, 2, '', 1, 50000.00, 50000.00);
 
 -- --------------------------------------------------------
 
@@ -571,21 +411,6 @@ CREATE TABLE `settings` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `settings`
---
-
-INSERT INTO `settings` (`id`, `user_id`, `setting_key`, `setting_value`, `created_at`) VALUES
-(1, 1, 'company_name', 'Shil Consultancy Services', '2025-09-23 21:29:12'),
-(2, 1, 'company_reg_number', 'Shil Consultancy Services', '2025-09-23 21:29:12'),
-(3, 1, 'company_address', '10 CHERRY GARDENS', '2025-09-23 21:29:12'),
-(4, 1, 'company_phone', '01768013249', '2025-09-23 21:29:12'),
-(5, 1, 'company_email', 'shilconsultancy@gmail.com', '2025-09-23 21:29:12'),
-(6, 1, 'company_website', '', '2025-09-23 21:29:12'),
-(7, 1, 'language', 'en_US', '2025-09-23 21:29:12'),
-(8, 1, 'timezone', 'Asia/Dhaka', '2025-09-23 21:29:12'),
-(9, 1, 'company_logo', 'logo.png', '2025-09-23 21:29:12');
-
 -- --------------------------------------------------------
 
 --
@@ -623,8 +448,7 @@ CREATE TABLE `users` (
 --
 
 INSERT INTO `users` (`id`, `parent_user_id`, `name`, `email`, `phone`, `profile_picture`, `password`, `role`, `created_at`) VALUES
-(1, NULL, 'saikat', 'shilconsultancy@gmail.com', '01768013249', 'pfp.jpg', '$2y$10$YAInn.lIVEEBFFXAfwJwRO21B13H2qyjsjjnJs.qWP3SGGx9duyGi', 'admin', '2025-09-23 05:28:08'),
-(2, 1, 'Test', 'test@test.com', NULL, NULL, '$2y$10$yZMMg1Ox.XgvG7r7Cm0Kn.84uZA.Pn85ETPVqKV7goOOKjNcHnt6m', 'staff', '2025-09-23 23:29:20');
+(1, NULL, 'saikat', 'shilconsultancy@gmail.com', '01768013249', 'pfp.jpg', '$2y$10$YAInn.lIVEEBFFXAfwJwRO21B13H2qyjsjjnJs.qWP3SGGx9duyGi', 'admin', '2025-09-23 05:28:08');
 
 -- --------------------------------------------------------
 
@@ -641,13 +465,6 @@ CREATE TABLE `vendors` (
   `address` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `vendors`
---
-
-INSERT INTO `vendors` (`id`, `user_id`, `name`, `email`, `phone`, `address`, `created_at`) VALUES
-(1, 1, 'Test', 'test@test.com', '0979557', 'adkjbc ..cnodicn;dc', '2025-09-23 21:18:32');
 
 --
 -- Indexes for dumped tables
@@ -867,139 +684,139 @@ ALTER TABLE `vendors`
 -- AUTO_INCREMENT for table `bank_accounts`
 --
 ALTER TABLE `bank_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `bank_transactions`
 --
 ALTER TABLE `bank_transactions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `chart_of_accounts`
 --
 ALTER TABLE `chart_of_accounts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `credit_notes`
 --
 ALTER TABLE `credit_notes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `credit_note_items`
 --
 ALTER TABLE `credit_note_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `customers`
 --
 ALTER TABLE `customers`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `documents`
 --
 ALTER TABLE `documents`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `expenses`
 --
 ALTER TABLE `expenses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `expense_categories`
 --
 ALTER TABLE `expense_categories`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `invoices`
 --
 ALTER TABLE `invoices`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `invoice_items`
 --
 ALTER TABLE `invoice_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `invoice_payments`
 --
 ALTER TABLE `invoice_payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `items`
 --
 ALTER TABLE `items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `journal_entries`
 --
 ALTER TABLE `journal_entries`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `journal_entry_items`
 --
 ALTER TABLE `journal_entry_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `payments`
 --
 ALTER TABLE `payments`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `quotes`
 --
 ALTER TABLE `quotes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `quote_items`
 --
 ALTER TABLE `quote_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `recurring_invoices`
 --
 ALTER TABLE `recurring_invoices`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `recurring_invoice_items`
 --
 ALTER TABLE `recurring_invoice_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sales_receipts`
 --
 ALTER TABLE `sales_receipts`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `sales_receipt_items`
 --
 ALTER TABLE `sales_receipt_items`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `settings`
 --
 ALTER TABLE `settings`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tax_rates`
@@ -1017,7 +834,7 @@ ALTER TABLE `users`
 -- AUTO_INCREMENT for table `vendors`
 --
 ALTER TABLE `vendors`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- Constraints for dumped tables

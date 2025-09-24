@@ -51,10 +51,13 @@ require_once '../../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Recurring Profile</h1>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
             <a href="<?php echo BASE_PATH; ?>sales/recurring/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to List</a>
-            <a href="edit.php?id=<?php echo $profile_id; ?>" class="px-4 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+            <a href="edit.php?id=<?php echo $profile_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm">
                 <i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span>
+            </a>
+            <a href="print.php?id=<?php echo $profile_id; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i><span>Print</span>
             </a>
         </div>
     </header>

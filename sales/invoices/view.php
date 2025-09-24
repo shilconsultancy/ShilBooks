@@ -56,6 +56,12 @@ $items_stmt = $pdo->prepare($items_sql);
 $items_stmt->execute(['invoice_id' => $invoice_id]);
 $invoice_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch company settings for display
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
+$settings_stmt->execute([$userId]);
+$settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+
 
 $pageTitle = 'View Invoice ' . htmlspecialchars($invoice['invoice_number']);
 require_once '../../partials/header.php';
@@ -68,6 +74,7 @@ require_once '../../partials/sidebar.php';
         <div class="flex items-center space-x-2">
             <a href="<?php echo BASE_PATH; ?>sales/invoices/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to All Invoices</a>
             <a href="edit.php?id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm"><i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span></a>
+            <a href="print.php?id=<?php echo $invoice_id; ?>" target="_blank" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm"><i data-feather="printer" class="w-4 h-4"></i><span>Print</span></a>
             <a href="<?php echo BASE_PATH; ?>sales/credit-notes/create.php?from_invoice_id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm"><i data-feather="file-minus" class="w-4 h-4"></i><span>Create Credit Note</span></a>
         </div>
     </header>
@@ -102,8 +109,8 @@ require_once '../../partials/sidebar.php';
                         <p class="text-macgray-500">#<?php echo htmlspecialchars($invoice['invoice_number']); ?></p>
                     </div>
                     <div class="text-right">
-                        <h3 class="text-lg font-semibold text-macgray-800">Your Company Name</h3>
-                        <p class="text-sm text-macgray-500">123 Business Rd.<br>City, State, 12345</p>
+                        <h3 class="text-lg font-semibold text-macgray-800"><?php echo $s('company_name', 'Your Company'); ?></h3>
+                        <p class="text-sm text-macgray-500"><?php echo nl2br($s('company_address', '123 Business Rd.<br>City, State, 12345')); ?></p>
                     </div>
                 </div>
 

@@ -38,6 +38,13 @@ $items_stmt = $pdo->prepare($items_sql);
 $items_stmt->execute(['receipt_id' => $receipt_id]);
 $receipt_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Fetch company settings
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
+$settings_stmt->execute([$userId]);
+$settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+
+
 $pageTitle = 'View Sales Receipt ' . htmlspecialchars($receipt['receipt_number']);
 require_once '../../partials/header.php';
 require_once '../../partials/sidebar.php';
@@ -46,13 +53,17 @@ require_once '../../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Sales Receipt: <?php echo htmlspecialchars($receipt['receipt_number']); ?></h1>
-        <div class="flex items-center space-x-4">
+        <div class="flex items-center space-x-2">
             <a href="<?php echo BASE_PATH; ?>sales/receipts/" class="text-sm text-macblue-600 hover:text-macblue-800">
                 &larr; Back to All Sales Receipts
             </a>
-            <a href="edit.php?id=<?php echo $receipt_id; ?>" class="px-4 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+            <a href="edit.php?id=<?php echo $receipt_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm">
                 <i data-feather="edit-2" class="w-4 h-4"></i>
                 <span>Edit</span>
+            </a>
+            <a href="print.php?id=<?php echo $receipt_id; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i>
+                <span>Print</span>
             </a>
         </div>
     </header>
@@ -66,8 +77,8 @@ require_once '../../partials/sidebar.php';
                         <p class="text-macgray-500">#<?php echo htmlspecialchars($receipt['receipt_number']); ?></p>
                     </div>
                     <div class="text-right">
-                        <h3 class="text-lg font-semibold text-macgray-800">Your Company Name</h3>
-                        <p class="text-sm text-macgray-500">123 Business Rd.<br>City, State, 12345</p>
+                        <h3 class="text-lg font-semibold text-macgray-800"><?php echo $s('company_name', 'Your Company'); ?></h3>
+                        <p class="text-sm text-macgray-500"><?php echo nl2br($s('company_address', '123 Business Rd.<br>City, State, 12345')); ?></p>
                     </div>
                 </div>
 
@@ -98,8 +109,8 @@ require_once '../../partials/sidebar.php';
                             <tr>
                                 <td class="px-2 py-4 whitespace-nowrap text-sm"><div class="font-medium text-macgray-800"><?php echo htmlspecialchars($item['item_name']); ?></div><div class="text-macgray-500 text-xs"><?php echo htmlspecialchars($item['description']); ?></div></td>
                                 <td class="px-2 py-4 whitespace-nowrap text-sm text-center text-macgray-500"><?php echo htmlspecialchars($item['quantity']); ?></td>
-                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right text-macgray-500">৳<?php echo htmlspecialchars(number_format($item['price'], 2)); ?></td>
-                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right font-medium text-macgray-800">৳<?php echo htmlspecialchars(number_format($item['total'], 2)); ?></td>
+                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right text-macgray-500"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($item['price'], 2)); ?></td>
+                                <td class="px-2 py-4 whitespace-nowrap text-sm text-right font-medium text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($item['total'], 2)); ?></td>
                             </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -109,9 +120,9 @@ require_once '../../partials/sidebar.php';
                 <div class="flex justify-end mt-8">
                     <div class="w-full max-w-xs">
                         <div class="space-y-2">
-                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Subtotal</span><span class="text-sm text-macgray-800">৳<?php echo htmlspecialchars(number_format($receipt['subtotal'], 2)); ?></span></div>
-                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Tax</span><span class="text-sm text-macgray-800">৳<?php echo htmlspecialchars(number_format($receipt['tax'], 2)); ?></span></div>
-                            <div class="flex justify-between pt-2 border-t bg-macgray-100 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Total Paid</span><span class="text-base font-bold text-macgray-900">৳<?php echo htmlspecialchars(number_format($receipt['total'], 2)); ?></span></div>
+                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Subtotal</span><span class="text-sm text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($receipt['subtotal'], 2)); ?></span></div>
+                            <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Tax</span><span class="text-sm text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($receipt['tax'], 2)); ?></span></div>
+                            <div class="flex justify-between pt-2 border-t bg-macgray-100 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Total Paid</span><span class="text-base font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($receipt['total'], 2)); ?></span></div>
                         </div>
                     </div>
                 </div>

@@ -43,9 +43,15 @@ require_once '../../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Payment Details</h1>
-        <a href="<?php echo BASE_PATH; ?>sales/payments/" class="text-sm text-macblue-600 hover:text-macblue-800">
-            &larr; Back to All Payments
-        </a>
+        <div class="flex items-center space-x-2">
+            <a href="<?php echo BASE_PATH; ?>sales/payments/" class="text-sm text-macblue-600 hover:text-macblue-800">
+                &larr; Back to All Payments
+            </a>
+             <a href="print.php?id=<?php echo $payment_id; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i>
+                <span>Print</span>
+            </a>
+        </div>
     </header>
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
@@ -62,7 +68,7 @@ require_once '../../partials/sidebar.php';
                     </div>
                     <div>
                         <p class="text-sm font-semibold text-macgray-500">Amount Paid</p>
-                        <p class="text-2xl font-bold text-green-600">৳<?php echo htmlspecialchars(number_format($payment['amount'], 2)); ?></p>
+                        <p class="text-2xl font-bold text-green-600"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($payment['amount'], 2)); ?></p>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
@@ -95,7 +101,7 @@ require_once '../../partials/sidebar.php';
                                     <tr>
                                         <td class="px-4 py-3 font-medium text-macgray-800"><?php echo htmlspecialchars($link['invoice_number']); ?></td>
                                         <td class="px-4 py-3 text-macgray-600"><?php echo htmlspecialchars(date("M d, Y", strtotime($link['invoice_date']))); ?></td>
-                                        <td class="px-4 py-3 text-right font-medium text-macgray-800">৳<?php echo htmlspecialchars(number_format($link['amount_applied'], 2)); ?></td>
+                                        <td class="px-4 py-3 text-right font-medium text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($link['amount_applied'], 2)); ?></td>
                                     </tr>
                                     <?php endforeach; ?>
                                 <?php endif; ?>

@@ -70,7 +70,12 @@ require_once '../partials/sidebar.php';
 <div class="flex-1 flex flex-col overflow-hidden">
     <header class="bg-white border-b border-macgray-200 py-3 px-6 flex items-center justify-between">
         <h1 class="text-xl font-semibold text-macgray-800">Balance Sheet</h1>
-        <a href="<?php echo BASE_PATH; ?>reports/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to Reports</a>
+        <div class="flex items-center space-x-2">
+            <a href="<?php echo BASE_PATH; ?>reports/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to Reports</a>
+            <a href="balance-sheet-print.php?as_of_date=<?php echo $as_of_date; ?>" target="_blank" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm">
+                <i data-feather="printer" class="w-4 h-4"></i><span>Print</span>
+            </a>
+        </div>
     </header>
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
@@ -100,15 +105,15 @@ require_once '../partials/sidebar.php';
                         <div>
                             <h4 class="font-semibold text-macgray-700">Current Assets</h4>
                             <div class="mt-2 space-y-2 text-sm pl-4">
-                                <div class="flex justify-between"><span class="text-macgray-600">Cash and Bank</span><span>৳<?php echo number_format($totalCash, 2); ?></span></div>
-                                <div class="flex justify-between"><span class="text-macgray-600">Accounts Receivable</span><span>৳<?php echo number_format($totalAR, 2); ?></span></div>
-                                <div class="flex justify-between"><span class="text-macgray-600">Inventory</span><span>৳<?php echo number_format($totalInventory, 2); ?></span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Cash and Bank</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalCash, 2); ?></span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Accounts Receivable</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalAR, 2); ?></span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Inventory</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalInventory, 2); ?></span></div>
                             </div>
                         </div>
 
                         <div class="flex justify-between mt-4 pt-2 border-t font-bold text-lg">
                             <span>Total Assets</span>
-                            <span>৳<?php echo number_format($totalAssets, 2); ?></span>
+                            <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalAssets, 2); ?></span>
                         </div>
                     </div>
 
@@ -118,7 +123,7 @@ require_once '../partials/sidebar.php';
                         <div>
                             <h4 class="font-semibold text-macgray-700">Liabilities</h4>
                             <div class="mt-2 space-y-2 text-sm pl-4">
-                                <div class="flex justify-between"><span class="text-macgray-600">Accounts Payable</span><span>৳0.00</span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Accounts Payable</span><span><?php echo CURRENCY_SYMBOL; ?>0.00</span></div>
                                 <p class="text-xs text-macgray-400">(Feature coming in Purchases module)</p>
                             </div>
                         </div>
@@ -126,18 +131,18 @@ require_once '../partials/sidebar.php';
                          <div>
                             <h4 class="font-semibold text-macgray-700 mt-4">Equity</h4>
                             <div class="mt-2 space-y-2 text-sm pl-4">
-                                <div class="flex justify-between"><span class="text-macgray-600">Owner's Equity</span><span>৳0.00</span></div>
-                                <div class="flex justify-between"><span class="text-macgray-600">Retained Earnings</span><span>৳<?php echo number_format($retainedEarnings, 2); ?></span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Owner's Equity</span><span><?php echo CURRENCY_SYMBOL; ?>0.00</span></div>
+                                <div class="flex justify-between"><span class="text-macgray-600">Retained Earnings</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($retainedEarnings, 2); ?></span></div>
                             </div>
                              <div class="flex justify-between mt-2 pt-2 border-t font-semibold">
                                 <span>Total Equity</span>
-                                <span>৳<?php echo number_format($totalEquity, 2); ?></span>
+                                <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalEquity, 2); ?></span>
                             </div>
                         </div>
 
                         <div class="flex justify-between mt-4 pt-2 border-t font-bold text-lg">
                             <span>Total Liabilities & Equity</span>
-                            <span>৳<?php echo number_format($totalLiabilitiesAndEquity, 2); ?></span>
+                            <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalLiabilitiesAndEquity, 2); ?></span>
                         </div>
                     </div>
                 </div>

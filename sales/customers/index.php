@@ -134,7 +134,8 @@ require_once '../../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($customer['email']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($customer['phone']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button class="editBtn text-macblue-600 hover:text-macblue-900" 
+                                            <a href="view.php?id=<?php echo $customer['id']; ?>" class="text-green-600 hover:text-green-900">View</a>
+                                            <button class="editBtn text-macblue-600 hover:text-macblue-900 ml-4" 
                                                     data-id="<?php echo $customer['id']; ?>"
                                                     data-customer-type="<?php echo htmlspecialchars($customer['customer_type']); ?>"
                                                     data-name="<?php echo htmlspecialchars($customer['name']); ?>"
