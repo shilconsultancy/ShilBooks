@@ -15,6 +15,8 @@ $password_errors = [];
 
 // --- Handle Profile Information Update ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
+    validate_csrf_token();
+    
     $name = trim($_POST['name']);
     $email = trim($_POST['email']);
     $phone = trim($_POST['phone']);
@@ -36,11 +38,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     // Handle Profile Picture Upload
     $profile_picture_filename = $_POST['existing_profile_picture']; // Keep old one by default
     if (isset($_FILES["profile_picture"]) && $_FILES["profile_picture"]["error"] == 0) {
-         $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-        if (in_array($_FILES["profile_picture"]["type"], $allowed_types)) {
+        $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+        $file_extension = strtolower(pathinfo(basename($_FILES["profile_picture"]["name"]), PATHINFO_EXTENSION));
+
+        if (in_array($_FILES["profile_picture"]["type"], $allowed_types) && in_array($file_extension, $allowed_extensions)) {
             $upload_dir = '../uploads/' . $userId . '/profile/';
             if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
-            $file_extension = pathinfo(basename($_FILES["profile_picture"]["name"]), PATHINFO_EXTENSION);
             $stored_filename = 'pfp.' . $file_extension;
             if (move_uploaded_file($_FILES["profile_picture"]["tmp_name"], $upload_dir . $stored_filename)) {
                 $profile_picture_filename = $stored_filename;
@@ -54,6 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute([$name, $email, $phone, $profile_picture_filename, $userId])) {
             $_SESSION['user_name'] = $name; // Update session variable
+            $_SESSION['profile_picture'] = $profile_picture_filename; // Update session variable
             $message = "Profile updated successfully!";
         } else {
             $errors[] = "Failed to update profile.";
@@ -64,6 +69,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
 
 // --- Handle Password Change ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_password'])) {
+    validate_csrf_token();
+    
     $current_password = $_POST['current_password'];
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
@@ -110,6 +117,7 @@ require_once '../partials/sidebar.php';
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-4xl mx-auto space-y-8">
             <form action="profile.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <h2 class="text-lg font-semibold text-macgray-800 border-b pb-4 mb-6">Your Profile</h2>
                     <?php if ($message): ?><div class="bg-green-100 border-green-400 text-green-700 px-4 py-3 rounded mb-4"><?php echo $message; ?></div><?php endif; ?>
@@ -138,6 +146,7 @@ require_once '../partials/sidebar.php';
             </form>
 
             <form action="profile.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                  <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <h2 class="text-lg font-semibold text-macgray-800 border-b pb-4 mb-6">Change Password(need to add forget password seeting)</h2>
                     <?php if ($password_message): ?><div class="bg-green-100 border-green-400 text-green-700 px-4 py-3 rounded mb-4"><?php echo $password_message; ?></div><?php endif; ?>

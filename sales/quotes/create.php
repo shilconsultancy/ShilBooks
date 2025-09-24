@@ -28,6 +28,8 @@ $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Handle Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     // --- Basic Validation ---
     if (empty($_POST['customer_id'])) {
         $errors[] = "Please select a customer.";
@@ -125,6 +127,7 @@ require_once '../../partials/sidebar.php';
             <?php endif; ?>
 
             <form action="create.php" method="POST" id="quote-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

@@ -18,6 +18,8 @@ if ($invoice_id == 0) {
 
 // Handle Status Update
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
+    validate_csrf_token();
+    
     $new_status = $_POST['new_status'];
     $allowed_statuses = ['draft', 'sent', 'paid', 'overdue'];
     if (in_array($new_status, $allowed_statuses)) {
@@ -81,6 +83,7 @@ require_once '../../partials/sidebar.php';
             <div class="bg-white p-4 rounded-xl shadow-sm border border-macgray-200 mb-6 flex items-center space-x-2">
                 <span class="text-sm font-medium text-gray-700 mr-4">Status: <strong class="uppercase"><?php echo htmlspecialchars($invoice['status']); ?></strong></span>
                 <form method="POST" action="view.php?id=<?php echo $invoice_id; ?>" class="flex items-center space-x-2">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                     <input type="hidden" name="change_status" value="1">
                     <select name="new_status" class="text-sm border-gray-300 rounded-md">
                         <option value="draft" <?php echo ($invoice['status'] == 'draft') ? 'selected' : ''; ?>>Draft</option>

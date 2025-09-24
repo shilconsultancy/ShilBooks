@@ -30,6 +30,8 @@ $tax_rates = $tax_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Handle Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     if (empty($_POST['customer_id']) || empty($_POST['invoice_date']) || empty($_POST['due_date']) || empty($_POST['item_id'])) {
         $errors[] = "Please fill all required fields and add at least one item.";
     }
@@ -126,6 +128,7 @@ require_once '../../partials/sidebar.php';
             <?php endif; ?>
 
             <form action="create.php" method="POST" id="invoice-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

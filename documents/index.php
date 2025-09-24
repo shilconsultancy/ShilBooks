@@ -13,13 +13,18 @@ $message = '';
 
 // --- Handle File Upload ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["document"])) {
+    validate_csrf_token();
+    
     $description = trim($_POST['description']);
     
     if (isset($_FILES["document"]) && $_FILES["document"]["error"] == 0) {
         $allowed_types = ['image/jpeg', 'image/png', 'application/pdf', 'text/csv'];
+        $allowed_extensions = ['jpg', 'jpeg', 'png', 'pdf', 'csv'];
         $max_size = 5 * 1024 * 1024; // 5 MB
+        
+        $file_extension = strtolower(pathinfo(basename($_FILES["document"]["name"]), PATHINFO_EXTENSION));
 
-        if (!in_array($_FILES["document"]["type"], $allowed_types)) {
+        if (!in_array($_FILES["document"]["type"], $allowed_types) || !in_array($file_extension, $allowed_extensions)) {
             $errors[] = "Invalid file type. Only JPG, PNG, PDF, and CSV are allowed.";
         }
         if ($_FILES["document"]["size"] > $max_size) {
@@ -42,7 +47,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["document"])) {
 
             if(empty($errors)) {
                 $original_filename = basename($_FILES["document"]["name"]);
-                $file_extension = pathinfo($original_filename, PATHINFO_EXTENSION);
                 $stored_filename = uniqid() . '.' . $file_extension;
                 
                 if (move_uploaded_file($_FILES["document"]["tmp_name"], $upload_dir_absolute . $stored_filename)) {
@@ -147,6 +151,7 @@ require_once '../partials/sidebar.php';
         <div class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <form action="index.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" id="csrf_token_modal">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Upload New Document</h3>
                     <div class="mt-4 space-y-4">
@@ -175,7 +180,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const modal = document.getElementById('formModal');
     const addBtn = document.getElementById('addBtn');
     const closeModalBtn = document.getElementById('closeModalBtn');
-    addBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+    const csrfTokenModal = document.getElementById('csrf_token_modal');
+    const mainCsrfToken = "<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>";
+
+    addBtn.addEventListener('click', () => {
+        csrfTokenModal.value = mainCsrfToken;
+        modal.classList.remove('hidden');
+    });
     closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
 });
 </script>

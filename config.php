@@ -9,6 +9,39 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// --- CSRF Protection ---
+/**
+ * Generates and stores a CSRF token in the session if one doesn't exist.
+ * This should be called on pages that display forms.
+ */
+function generate_csrf_token() {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+}
+
+/**
+ * Validates the CSRF token from a POST request.
+ * Dies with an error message if validation fails. Call this at the beginning of form processing.
+ */
+function validate_csrf_token() {
+    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $_POST['csrf_token'])) {
+        // Clear the session token to prevent reuse in case of an attack attempt
+        unset($_SESSION['csrf_token']);
+        // A simple die is effective, but for a production app, you might want a more user-friendly error page.
+        die("CSRF token validation failed. Please go back, refresh the page, and try again.");
+    }
+    // On successful validation, unset the token to ensure it's used only once.
+    unset($_SESSION['csrf_token']);
+}
+
+// Automatically generate a token on every page that is loaded with a GET request.
+// This ensures that any form on the page will have a token ready.
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    generate_csrf_token();
+}
+
+
 // --- FULLY DYNAMIC BASE PATH ---
 $doc_root = $_SERVER['DOCUMENT_ROOT'];
 $project_dir = __DIR__;

@@ -18,6 +18,8 @@ $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+
     $customer_id = $_POST['customer_id'];
     $invoice_id = $_POST['invoice_id'];
     $credit_note_date = $_POST['credit_note_date'];
@@ -84,6 +86,7 @@ require_once '../../partials/sidebar.php';
             <div class="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded mb-4"><ul><?php foreach ($errors as $error) echo "<li>".htmlspecialchars($error)."</li>"; ?></ul></div>
             <?php endif; ?>
             <form action="create.php" method="POST" id="credit-note-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200 space-y-4">
                     <div>
                         <label for="customer_id" class="block text-sm font-medium text-gray-700">Customer*</label>

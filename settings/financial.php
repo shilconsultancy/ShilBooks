@@ -13,6 +13,8 @@ $message = '';
 
 // Handle Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     try {
         $pdo->beginTransaction();
         
@@ -31,7 +33,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $tax_names = $_POST['tax_name'] ?? [];
         $tax_rates = $_POST['tax_rate'] ?? [];
         $default_tax_id = $_POST['default_tax'] ?? null;
-        $deleted_taxes = isset($_POST['deleted_taxes']) && !empty($_POST['deleted_taxes']) ? explode(',', $_POST['deleted_taxes']) : [];
+        
+        // Sanitize deleted taxes input
+        $deleted_taxes_raw = isset($_POST['deleted_taxes']) && !empty($_POST['deleted_taxes']) ? explode(',', $_POST['deleted_taxes']) : [];
+        $deleted_taxes = array_map('intval', $deleted_taxes_raw);
+        $deleted_taxes = array_filter($deleted_taxes, fn($id) => $id > 0);
+
 
         // Delete taxes marked for deletion
         if(!empty($deleted_taxes)) {
@@ -103,6 +110,7 @@ require_once '../partials/sidebar.php';
             <?php if (!empty($errors)): ?><div class="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded mb-4"><?php echo $errors[0]; ?></div><?php endif; ?>
 
             <form action="financial.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200 mb-6">
                     <h2 class="text-lg font-semibold text-macgray-800 border-b pb-4 mb-6">Currency Settings</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -201,7 +209,6 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-
 
 <?php
 require_once '../partials/footer.php';

@@ -22,6 +22,8 @@ $payment_methods = ['Bank Transfer', 'Cash', 'Credit Card', 'Check', 'Mobile Ban
 
 // Handle Form Submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     $customer_id = $_POST['customer_id'];
     $payment_date = $_POST['payment_date'];
     $payment_method = $_POST['payment_method'];
@@ -94,6 +96,7 @@ require_once '../../partials/sidebar.php';
             <?php endif; ?>
 
             <form action="create.php" method="POST" id="payment-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

@@ -13,11 +13,17 @@ $message = '';
 
 // --- Handle Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+
     try {
         $pdo->beginTransaction();
         
         // Loop through all posted text data and save it
         foreach ($_POST as $key => $value) {
+            // Skip the token itself from being saved to settings
+            if ($key === 'csrf_token') {
+                continue;
+            }
             $sql = "INSERT INTO settings (user_id, setting_key, setting_value) VALUES (?, ?, ?) 
                     ON DUPLICATE KEY UPDATE setting_value = ?";
             $stmt = $pdo->prepare($sql);
@@ -27,11 +33,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // --- Handle Logo Upload ---
         if (isset($_FILES["company_logo"]) && $_FILES["company_logo"]["error"] == 0) {
             $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
-            if (in_array($_FILES["company_logo"]["type"], $allowed_types)) {
+            $allowed_extensions = ['jpg', 'jpeg', 'png', 'gif'];
+            $file_extension = strtolower(pathinfo(basename($_FILES["company_logo"]["name"]), PATHINFO_EXTENSION));
+
+            if (in_array($_FILES["company_logo"]["type"], $allowed_types) && in_array($file_extension, $allowed_extensions)) {
                 $upload_dir = '../uploads/' . $userId . '/';
                 if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
 
-                $file_extension = pathinfo(basename($_FILES["company_logo"]["name"]), PATHINFO_EXTENSION);
                 $stored_filename = 'logo.' . $file_extension;
                 
                 if (move_uploaded_file($_FILES["company_logo"]["tmp_name"], $upload_dir . $stored_filename)) {
@@ -71,6 +79,7 @@ require_once '../partials/sidebar.php';
             <?php if (!empty($errors)): ?><div class="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded mb-4"><?php echo $errors[0]; ?></div><?php endif; ?>
 
             <form action="company.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <h2 class="text-lg font-semibold text-macgray-800 border-b pb-4 mb-6">Company Information</h2>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

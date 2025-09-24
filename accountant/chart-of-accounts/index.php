@@ -12,6 +12,8 @@ $errors = [];
 
 // --- Handle POST request (Add or Edit Account) ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     $name = trim($_POST['account_name']);
     $type = $_POST['account_type'];
     $description = trim($_POST['description']);
@@ -131,6 +133,7 @@ require_once '../../partials/sidebar.php';
         <div class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
         <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
             <form action="index.php" method="POST">
+                <input type="hidden" name="csrf_token" id="csrf_token_modal">
                 <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
                     <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalTitle">Add New Account</h3>
                     <div class="mt-4 space-y-4">
@@ -172,8 +175,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const modalTitle = document.getElementById('modalTitle');
     const editIdField = document.getElementById('edit_id');
     const typeSelect = document.getElementById('account_type');
+    const csrfTokenModal = document.getElementById('csrf_token_modal');
+    const mainCsrfToken = "<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>";
 
-    function openModal() { modal.classList.remove('hidden'); }
+    function openModal() { 
+        csrfTokenModal.value = mainCsrfToken;
+        modal.classList.remove('hidden'); 
+    }
     function closeModal() { modal.classList.add('hidden'); form.reset(); }
     
     addBtn.addEventListener('click', () => {

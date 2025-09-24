@@ -18,6 +18,8 @@ if ($receipt_id == 0) {
 
 // Handle Form Submission for UPDATE
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     if (empty($_POST['customer_id']) || empty($_POST['receipt_date']) || empty($_POST['item_id'])) {
         $errors[] = "Please fill all required fields and add at least one item.";
     }
@@ -130,6 +132,7 @@ require_once '../../partials/sidebar.php';
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-4xl mx-auto">
             <form action="edit.php?id=<?php echo $receipt_id; ?>" method="POST" id="receipt-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>

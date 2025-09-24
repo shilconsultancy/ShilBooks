@@ -12,6 +12,9 @@ $error = '';
 
 // Process form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // 1. Validate the CSRF token
+    validate_csrf_token();
+
     if (empty(trim($_POST["email"])) || empty(trim($_POST["password"]))) {
         $error = "Please enter both email and password.";
     } else {
@@ -96,11 +99,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <h2 class="mt-6 text-center text-3xl font-extrabold text-macgray-900">
                 Sign in to your account
             </h2>
-            <p class="mt-2 text-center text-sm text-macgray-600">
-                Or <a href="register.php" class="font-medium text-macblue-600 hover:text-macblue-500">
-                    create a new account
-                </a>
-            </p>
         </div>
         
         <?php if(!empty($error)): ?>
@@ -110,6 +108,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <?php endif; ?>
 
         <form class="mt-8 space-y-6" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="post">
+            <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
             <input type="hidden" name="remember" value="true">
             <div class="rounded-md shadow-sm -space-y-px">
                 <div>

@@ -18,6 +18,8 @@ $accounts = $accounts_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Handle Form Submission ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     $entry_date = $_POST['entry_date'];
     $description = trim($_POST['description']);
     $account_ids = $_POST['account_id'] ?? [];
@@ -101,6 +103,7 @@ require_once '../../partials/sidebar.php';
             <?php endif; ?>
 
             <form action="create.php" method="POST" id="journal-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
@@ -128,8 +131,8 @@ require_once '../../partials/sidebar.php';
                         <tfoot class="bg-macgray-50">
                             <tr>
                                 <td class="px-2 py-3 text-right font-semibold">Totals</td>
-                                <td class="px-2 py-3 text-right font-bold" id="total-debit">৳0.00</td>
-                                <td class="px-2 py-3 text-right font-bold" id="total-credit">৳0.00</td>
+                                <td class="px-2 py-3 text-right font-bold" id="total-debit">เงณ0.00</td>
+                                <td class="px-2 py-3 text-right font-bold" id="total-credit">เงณ0.00</td>
                                 <td></td>
                             </tr>
                              <tr>
@@ -181,8 +184,8 @@ document.addEventListener('DOMContentLoaded', function() {
             totalCredit += parseFloat(row.querySelector('.credit-input').value) || 0;
         });
         
-        totalDebitEl.innerText = '৳' + totalDebit.toFixed(2);
-        totalCreditEl.innerText = '৳' + totalCredit.toFixed(2);
+        totalDebitEl.innerText = 'เงณ' + totalDebit.toFixed(2);
+        totalCreditEl.innerText = 'เงณ' + totalCredit.toFixed(2);
 
         if (totalDebit.toFixed(2) === totalCredit.toFixed(2) && totalDebit > 0) {
             balanceStatusEl.innerText = 'Totals are balanced.';

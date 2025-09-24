@@ -18,6 +18,8 @@ if ($profile_id == 0) {
 
 // --- Handle Form Submission for UPDATE ---
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    validate_csrf_token();
+    
     if (empty($_POST['customer_id']) || empty($_POST['start_date']) || empty($_POST['frequency']) || empty($_POST['item_id'])) {
         $errors[] = "Please fill all required fields and add at least one item.";
     }
@@ -126,6 +128,7 @@ require_once '../../partials/sidebar.php';
             <?php endif; ?>
 
             <form action="edit.php?id=<?php echo $profile_id; ?>" method="POST" id="recurring-form">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
                 <div class="bg-white p-6 rounded-xl shadow-sm border border-macgray-200">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
