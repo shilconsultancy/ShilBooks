@@ -10,15 +10,14 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 $userId = $_SESSION['user_id'];
 
 // Fetch all journal entries for the current user
-$sql = "SELECT je.*, SUM(j_item.amount) as total_amount 
+$sql = "SELECT je.*, SUM(j_item.amount) as total_amount
         FROM journal_entries je
         JOIN journal_entry_items j_item ON je.id = j_item.journal_entry_id
-        WHERE je.user_id = :user_id AND j_item.type = 'debit'
+        WHERE j_item.type = 'debit'
         GROUP BY je.id
         ORDER BY je.entry_date DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $journals = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

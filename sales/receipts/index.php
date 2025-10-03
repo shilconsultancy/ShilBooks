@@ -12,15 +12,16 @@ $message = '';
 
 // Handle Delete Action
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $receipt_id_to_delete = (int)$_GET['id'];
+    if (hasPermission('admin')) {
+        $receipt_id_to_delete = (int)$_GET['id'];
 
     try {
         $pdo->beginTransaction();
 
-        // Check if the receipt belongs to the user
-        $check_sql = "SELECT id FROM sales_receipts WHERE id = :id AND user_id = :user_id";
+        // Check if the receipt exists
+        $check_sql = "SELECT id FROM sales_receipts WHERE id = :id";
         $check_stmt = $pdo->prepare($check_sql);
-        $check_stmt->execute(['id' => $receipt_id_to_delete, 'user_id' => $userId]);
+        $check_stmt->execute(['id' => $receipt_id_to_delete]);
 
         if ($check_stmt->fetch()) {
             // Get receipt items to restore inventory
@@ -31,12 +32,11 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
 
             // Restore inventory for each product
             foreach ($items_to_restore as $item) {
-                $update_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                $update_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product'";
                 $update_stmt = $pdo->prepare($update_sql);
                 $update_stmt->execute([
                     'quantity' => $item['quantity'],
-                    'id' => $item['item_id'],
-                    'user_id' => $userId
+                    'id' => $item['item_id']
                 ]);
             }
 
@@ -57,17 +57,16 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
         $pdo->rollBack();
         $message = "Error deleting sales receipt: " . $e->getMessage();
     }
+    }
 }
 
 
-// Fetch all sales receipts for the current user
-$sql = "SELECT sr.*, c.name AS customer_name 
+// Fetch all sales receipts
+$sql = "SELECT sr.*, c.name AS customer_name
         FROM sales_receipts sr
         JOIN customers c ON sr.customer_id = c.id
-        WHERE sr.user_id = :user_id 
         ORDER BY sr.receipt_date DESC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $receipts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -118,7 +117,10 @@ require_once '../../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-900">৳<?php echo htmlspecialchars(number_format($receipt['total'], 2)); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $receipt['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
-                                            <a href="index.php?action=delete&id=<?php echo $receipt['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this receipt? This will restore item quantities to inventory.');">Delete</a>
+                                            <a href="edit.php?id=<?php echo $receipt['id']; ?>" class="text-macblue-600 hover:text-macblue-900 ml-4">Edit</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $receipt['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this receipt? This will restore item quantities to inventory.');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

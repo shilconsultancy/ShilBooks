@@ -12,16 +12,14 @@ $errors = [];
 
 // --- Fetch data for form dropdowns ---
 // Fetch Customers
-$customer_sql = "SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+$customer_sql = "SELECT id, name FROM customers ORDER BY name ASC";
 $customer_stmt = $pdo->prepare($customer_sql);
-$customer_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Items/Services
-$item_sql = "SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC";
+$item_sql = "SELECT id, name, description, sale_price FROM items ORDER BY name ASC";
 $item_stmt = $pdo->prepare($item_sql);
-$item_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -47,18 +45,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
 
             // 1. Get the next quote number
-            $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM quotes WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $userId]);
+            $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM quotes");
+            $stmt->execute();
             $quote_count = $stmt->fetchColumn();
             $quote_number = 'QUO-' . str_pad($quote_count + 1, 4, '0', STR_PAD_LEFT);
 
             // 2. Insert into the main `quotes` table
-            $sql = "INSERT INTO quotes (user_id, customer_id, quote_number, quote_date, expiry_date, subtotal, tax, total, notes, status) 
-                    VALUES (:user_id, :customer_id, :quote_number, :quote_date, :expiry_date, :subtotal, :tax, :total, :notes, 'draft')";
-            
+            $sql = "INSERT INTO quotes (customer_id, quote_number, quote_date, expiry_date, subtotal, tax, total, notes, status)
+                    VALUES (:customer_id, :quote_number, :quote_date, :expiry_date, :subtotal, :tax, :total, :notes, 'draft')";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                'user_id' => $userId,
                 'customer_id' => $_POST['customer_id'],
                 'quote_number' => $quote_number,
                 'quote_date' => $_POST['quote_date'],

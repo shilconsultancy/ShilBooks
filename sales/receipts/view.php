@@ -17,11 +17,11 @@ if ($receipt_id == 0) {
 
 // Fetch receipt details
 $sql = "SELECT r.*, c.name as customer_name, c.email as customer_email, c.address as customer_address
-        FROM sales_receipts r 
+        FROM sales_receipts r
         JOIN customers c ON r.customer_id = c.id
-        WHERE r.id = :id AND r.user_id = :user_id";
+        WHERE r.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $receipt_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $receipt_id]);
 $receipt = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$receipt) {

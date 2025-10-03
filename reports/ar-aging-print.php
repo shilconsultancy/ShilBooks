@@ -14,9 +14,9 @@ $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 $sql = "SELECT i.id, i.invoice_number, i.due_date, (i.total - i.amount_paid) as balance_due, c.name as customer_name, DATEDIFF(:as_of_date, i.due_date) as days_overdue
         FROM invoices i
         JOIN customers c ON i.customer_id = c.id
-        WHERE i.user_id = :user_id AND i.status IN ('sent', 'overdue') AND i.invoice_date <= :as_of_date";
+        WHERE i.status IN ('sent', 'overdue') AND i.invoice_date <= :as_of_date";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId, 'as_of_date' => $as_of_date]);
+$stmt->execute(['as_of_date' => $as_of_date]);
 $unpaid_invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $buckets = ['Current' => [], '1 - 30 Days' => [], '31 - 60 Days' => [], '61 - 90 Days' => [], '91+ Days' => []];
@@ -36,8 +36,8 @@ foreach ($unpaid_invoices as $invoice) {
 }
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

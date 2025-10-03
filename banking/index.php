@@ -27,11 +27,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($edit_id) {
             // Note: Editing initial balance is disabled in the form as it would require complex recalculations.
             // We only allow editing names and numbers for existing accounts.
-            $sql = "UPDATE bank_accounts SET account_name = ?, bank_name = ?, account_number = ? WHERE id = ? AND user_id = ?";
-            $params = [$account_name, $bank_name, $account_number, $edit_id, $userId];
+            $sql = "UPDATE bank_accounts SET account_name = ?, bank_name = ?, account_number = ? WHERE id = ?";
+            $params = [$account_name, $bank_name, $account_number, $edit_id];
         } else {
-            $sql = "INSERT INTO bank_accounts (user_id, account_name, bank_name, account_number, initial_balance, current_balance) VALUES (?, ?, ?, ?, ?, ?)";
-            $params = [$userId, $account_name, $bank_name, $account_number, $initial_balance, $initial_balance];
+            $sql = "INSERT INTO bank_accounts (account_name, bank_name, account_number, initial_balance, current_balance) VALUES (?, ?, ?, ?, ?)";
+            $params = [$account_name, $bank_name, $account_number, $initial_balance, $initial_balance];
         }
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($params)) {
@@ -45,20 +45,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    // In a full system, you would first check if there are transactions linked to this account before deleting.
-    $sql = "DELETE FROM bank_accounts WHERE id = ? AND user_id = ?";
-    $stmt = $pdo->prepare($sql);
-    if ($stmt->execute([$delete_id, $userId])) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        // In a full system, you would first check if there are transactions linked to this account before deleting.
+        $sql = "DELETE FROM bank_accounts WHERE id = ?";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute([$delete_id])) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
 // Fetch all accounts
-$sql = "SELECT * FROM bank_accounts WHERE user_id = ? ORDER BY account_name ASC";
+$sql = "SELECT * FROM bank_accounts ORDER BY account_name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->execute([$userId]);
+$stmt->execute();
 $accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'Banking';
@@ -103,7 +105,9 @@ require_once '../partials/sidebar.php';
                                                 data-account_name="<?php echo htmlspecialchars($account['account_name']); ?>"
                                                 data-bank_name="<?php echo htmlspecialchars($account['bank_name']); ?>"
                                                 data-account_number="<?php echo htmlspecialchars($account['account_number']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $account['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $account['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

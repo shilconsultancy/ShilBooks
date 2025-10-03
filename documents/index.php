@@ -32,17 +32,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["document"])) {
         }
 
         if (empty($errors)) {
-            $upload_dir_relative = 'uploads/' . $userId . '/';
+            $upload_dir_relative = 'uploads/company/';
             $upload_dir_absolute = '../' . $upload_dir_relative;
 
             if (!is_dir($upload_dir_absolute)) {
                 if (!mkdir($upload_dir_absolute, 0755, true)) {
-                    $errors[] = "Error: Failed to create the upload directory. Please check server permissions for the 'uploads' folder.";
+                    $errors[] = "Error: Failed to create the upload directory. Please check server permissions.";
                 }
             }
-            
+
             if (!is_writable($upload_dir_absolute)) {
-                 $errors[] = "Error: The upload directory is not writable. Please check server permissions.";
+                  $errors[] = "Error: The upload directory is not writable. Please check server permissions.";
             }
 
             if(empty($errors)) {
@@ -50,9 +50,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["document"])) {
                 $stored_filename = uniqid() . '.' . $file_extension;
                 
                 if (move_uploaded_file($_FILES["document"]["tmp_name"], $upload_dir_absolute . $stored_filename)) {
-                    $sql = "INSERT INTO documents (user_id, original_filename, stored_filename, file_path, file_type, file_size, description) VALUES (?, ?, ?, ?, ?, ?, ?)";
+                    $sql = "INSERT INTO documents (original_filename, stored_filename, file_path, file_type, file_size, description) VALUES (?, ?, ?, ?, ?, ?)";
                     $stmt = $pdo->prepare($sql);
-                    if ($stmt->execute([$userId, $original_filename, $stored_filename, $upload_dir_relative, $_FILES["document"]["type"], $_FILES["document"]["size"], $description])) {
+                    if ($stmt->execute([$original_filename, $stored_filename, $upload_dir_relative, $_FILES["document"]["type"], $_FILES["document"]["size"], $description])) {
                         $message = "File uploaded successfully.";
                     } else {
                         $errors[] = "Failed to save file information to the database.";
@@ -69,9 +69,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_FILES["document"])) {
 
 // --- Handle Delete Action ---
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $stmt = $pdo->prepare("SELECT file_path, stored_filename FROM documents WHERE id = ? AND user_id = ?");
-    $stmt->execute([$delete_id, $userId]);
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+    $stmt = $pdo->prepare("SELECT file_path, stored_filename FROM documents WHERE id = ?");
+    $stmt->execute([$delete_id]);
     $doc = $stmt->fetch();
 
     if ($doc) {
@@ -83,12 +84,13 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
         $delete_stmt->execute([$delete_id]);
         $message = "Document deleted successfully.";
     }
+    }
 }
 
 
 // Fetch all documents for the user
-$stmt = $pdo->prepare("SELECT * FROM documents WHERE user_id = ? ORDER BY uploaded_at DESC");
-$stmt->execute([$userId]);
+$stmt = $pdo->prepare("SELECT * FROM documents ORDER BY uploaded_at DESC");
+$stmt->execute();
 $documents = $stmt->fetchAll();
 
 $pageTitle = 'Documents';
@@ -133,7 +135,9 @@ require_once '../partials/sidebar.php';
                                         <td class="px-6 py-4 text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $doc['id']; ?>" target="_blank" class="text-green-600 hover:text-green-900">View</a>
                                             <a href="download.php?id=<?php echo $doc['id']; ?>" class="text-macblue-600 hover:text-macblue-900 ml-4">Download</a>
-                                            <a href="index.php?action=delete&id=<?php echo $doc['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $doc['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

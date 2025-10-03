@@ -11,15 +11,13 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // --- Fetch data for form dropdowns ---
-$customer_sql = "SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+$customer_sql = "SELECT id, name FROM customers ORDER BY name ASC";
 $customer_stmt = $pdo->prepare($customer_sql);
-$customer_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$item_sql = "SELECT id, name, description, sale_price, item_type FROM items WHERE user_id = :user_id ORDER BY name ASC";
+$item_sql = "SELECT id, name, description, sale_price, item_type FROM items ORDER BY name ASC";
 $item_stmt = $pdo->prepare($item_sql);
-$item_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -37,18 +35,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
 
             // 1. Get the next receipt number
-            $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM sales_receipts WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $userId]);
+            $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM sales_receipts");
+            $stmt->execute();
             $receipt_count = $stmt->fetchColumn();
             $receipt_number = 'RCPT-' . str_pad($receipt_count + 1, 4, '0', STR_PAD_LEFT);
 
             // 2. Insert into the main `sales_receipts` table
-            $sql = "INSERT INTO sales_receipts (user_id, customer_id, receipt_number, receipt_date, subtotal, tax, total, notes) 
-                    VALUES (:user_id, :customer_id, :receipt_number, :receipt_date, :subtotal, :tax, :total, :notes)";
-            
+            $sql = "INSERT INTO sales_receipts (customer_id, receipt_number, receipt_date, subtotal, tax, total, notes)
+                    VALUES (:customer_id, :receipt_number, :receipt_date, :subtotal, :tax, :total, :notes)";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                'user_id' => $userId,
                 'customer_id' => $_POST['customer_id'],
                 'receipt_number' => $receipt_number,
                 'receipt_date' => $_POST['receipt_date'],
@@ -79,9 +76,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     ]);
 
                     // Update inventory for products
-                    $item_type_sql = "SELECT item_type FROM items WHERE id = :id AND user_id = :user_id";
+                    $item_type_sql = "SELECT item_type FROM items WHERE id = :id";
                     $item_type_stmt = $pdo->prepare($item_type_sql);
-                    $item_type_stmt->execute(['id' => $itemId, 'user_id' => $userId]);
+                    $item_type_stmt->execute(['id' => $itemId]);
                     $item_result = $item_type_stmt->fetch(PDO::FETCH_ASSOC);
 
                     if ($item_result && $item_result['item_type'] == 'product') {

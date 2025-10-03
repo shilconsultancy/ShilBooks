@@ -11,9 +11,9 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // Fetch Customers for the dropdown
-$customer_sql = "SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+$customer_sql = "SELECT id, name FROM customers ORDER BY name ASC";
 $customer_stmt = $pdo->prepare($customer_sql);
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Define the list of payment methods ---
@@ -43,9 +43,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
             
             // 1. Insert into payments table with the calculated total
-            $sql = "INSERT INTO payments (user_id, customer_id, payment_date, amount, payment_method, notes) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO payments (customer_id, payment_date, amount, payment_method, notes) VALUES (?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$userId, $customer_id, $payment_date, $amount, $payment_method, $notes]);
+            $stmt->execute([$customer_id, $payment_date, $amount, $payment_method, $notes]);
             $payment_id = $pdo->lastInsertId();
 
             $affected_invoice_ids = [];
@@ -57,8 +57,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $sql_link = "INSERT INTO invoice_payments (payment_id, invoice_id, amount_applied) VALUES (?, ?, ?)";
                     $pdo->prepare($sql_link)->execute([$payment_id, $invoice_id, $amount_applied]);
 
-                    $sql_update = "UPDATE invoices SET amount_paid = amount_paid + ? WHERE id = ? AND user_id = ?";
-                    $pdo->prepare($sql_update)->execute([$amount_applied, $invoice_id, $userId]);
+                    $sql_update = "UPDATE invoices SET amount_paid = amount_paid + ? WHERE id = ?";
+                    $pdo->prepare($sql_update)->execute([$amount_applied, $invoice_id]);
                     
                     $affected_invoice_ids[] = $invoice_id;
                 }

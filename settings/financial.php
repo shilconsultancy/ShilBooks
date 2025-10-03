@@ -1,6 +1,13 @@
 <?php
 require_once '../config.php';
 
+// Admin-only access check
+if (!hasPermission('admin')) {
+    // Redirect non-admins to the dashboard or show an error
+    header("location: " . BASE_PATH . "dashboard.php");
+    exit;
+}
+
 // Security Check
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php");
@@ -23,8 +30,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         foreach ($settings_to_save as $key) {
             if (isset($_POST[$key])) {
                 $value = trim($_POST[$key]);
-                $sql = "INSERT INTO settings (user_id, setting_key, setting_value) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE setting_value = ?";
-                $pdo->prepare($sql)->execute([$userId, $key, $value, $value]);
+                $sql = "INSERT INTO settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?";
+                $pdo->prepare($sql)->execute([$key, $value, $value]);
             }
         }
 
@@ -43,13 +50,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Delete taxes marked for deletion
         if(!empty($deleted_taxes)) {
             $delete_placeholders = implode(',', array_fill(0, count($deleted_taxes), '?'));
-            $delete_sql = "DELETE FROM tax_rates WHERE id IN (" . $delete_placeholders . ") AND user_id = ?";
-            $delete_params = array_merge($deleted_taxes, [$userId]);
-            $pdo->prepare($delete_sql)->execute($delete_params);
+            $delete_sql = "DELETE FROM tax_rates WHERE id IN (" . $delete_placeholders . ")";
+            $pdo->prepare($delete_sql)->execute($deleted_taxes);
         }
-        
+
         // Update is_default flag to false for all
-        $pdo->prepare("UPDATE tax_rates SET is_default = FALSE WHERE user_id = ?")->execute([$userId]);
+        $pdo->prepare("UPDATE tax_rates SET is_default = FALSE")->execute();
 
         // Upsert (Update/Insert) tax rates
         foreach ($tax_names as $key => $name) {
@@ -61,12 +67,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             if (!empty($name) && is_numeric($rate)) {
                 if (is_numeric($id)) { // Update existing
-                    $sql = "UPDATE tax_rates SET tax_name = ?, tax_rate = ?, is_default = ? WHERE id = ? AND user_id = ?";
-                    $pdo->prepare($sql)->execute([$name, $rate, $is_default, $id, $userId]);
+                    $sql = "UPDATE tax_rates SET tax_name = ?, tax_rate = ?, is_default = ? WHERE id = ?";
+                    $pdo->prepare($sql)->execute([$name, $rate, $is_default, $id]);
                 } else { // Insert new
-                    $sql = "INSERT INTO tax_rates (user_id, tax_name, tax_rate, is_default) VALUES (?, ?, ?, ?)";
+                    $sql = "INSERT INTO tax_rates (tax_name, tax_rate, is_default) VALUES (?, ?, ?)";
                     $stmt = $pdo->prepare($sql);
-                    $stmt->execute([$userId, $name, $rate, 0]); // Insert as non-default first
+                    $stmt->execute([$name, $rate, 0]); // Insert as non-default first
                     $new_id = $pdo->lastInsertId();
                     if($default_tax_id == $id) { // if the 'new' radio button was checked
                        $pdo->prepare("UPDATE tax_rates SET is_default = TRUE WHERE id = ?")->execute([$new_id]);
@@ -84,13 +90,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // --- Fetch data for the form ---
-$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ?");
-$stmt->execute([$userId]);
+$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
+$stmt->execute();
 $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 
-$tax_stmt = $pdo->prepare("SELECT * FROM tax_rates WHERE user_id = ? ORDER BY tax_name ASC");
-$tax_stmt->execute([$userId]);
+$tax_stmt = $pdo->prepare("SELECT * FROM tax_rates ORDER BY tax_name ASC");
+$tax_stmt->execute();
 $tax_rates = $tax_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

@@ -1,6 +1,13 @@
 <?php
 require_once '../config.php';
 
+// Admin-only access check
+if (!hasPermission('admin')) {
+    // Redirect non-admins to the dashboard or show an error
+    header("location: " . BASE_PATH . "dashboard.php");
+    exit;
+}
+
 // Security Check
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php");

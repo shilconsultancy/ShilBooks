@@ -41,6 +41,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     generate_csrf_token();
 }
 
+// --- ROLE-BASED ACCESS CONTROL ---
+/**
+ * Checks if the logged-in user has a specific role or is an admin.
+ * @param array|string $required_roles The role(s) required to perform an action.
+ * @return bool True if the user has permission, false otherwise.
+ */
+function hasPermission($required_roles) {
+    $user_role = $_SESSION['user_role'] ?? null;
+
+    // If user_role is not in session, try to get it from database (for existing sessions)
+    if (!$user_role && isset($_SESSION['user_id'])) {
+        try {
+            $stmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+            $stmt->execute([$_SESSION['user_id']]);
+            $user_data = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($user_data) {
+                $user_role = $user_data['role'];
+                $_SESSION['user_role'] = $user_role; // Store for future requests
+            }
+        } catch (Exception $e) {
+            // If database query fails, return false
+            return false;
+        }
+    }
+
+    if (!$user_role) {
+        return false;
+    }
+
+    if ($user_role === 'admin') {
+        return true; // Admin has access to everything.
+    }
+    if (is_array($required_roles)) {
+        return in_array($user_role, $required_roles);
+    }
+    return $user_role === $required_roles;
+}
+
 
 // --- FULLY DYNAMIC BASE PATH ---
 $doc_root = $_SERVER['DOCUMENT_ROOT'];
@@ -67,20 +105,14 @@ try {
 }
 
 // --- LOAD GLOBAL SETTINGS ---
-if (isset($_SESSION['user_id'])) {
-    try {
-        $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ?");
-        $stmt->execute([$_SESSION['user_id']]);
-        $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-    } catch (Exception $e) {
-        // If settings table doesn't exist or there's an error, use defaults
-        $settings_raw = [];
-    }
-    
-    define('CURRENCY_SYMBOL', $settings_raw['currency_symbol'] ?? '৳');
-    define('INVOICE_PREFIX', $settings_raw['invoice_prefix'] ?? 'INV-');
-} else {
-    // Default values for logged-out pages
-    define('CURRENCY_SYMBOL', '৳');
-    define('INVOICE_PREFIX', 'INV-');
+try {
+    $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
+    $stmt->execute();
+    $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (Exception $e) {
+    // If settings table doesn't exist or there's an error, use defaults
+    $settings_raw = [];
 }
+
+define('CURRENCY_SYMBOL', $settings_raw['currency_symbol'] ?? '৳');
+define('INVOICE_PREFIX', $settings_raw['invoice_prefix'] ?? 'INV-');

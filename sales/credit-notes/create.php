@@ -11,9 +11,9 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // Fetch Customers
-$customer_sql = "SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+$customer_sql = "SELECT id, name FROM customers ORDER BY name ASC";
 $customer_stmt = $pdo->prepare($customer_sql);
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Handle Form Submission
@@ -31,9 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     // Server-side validation for credit amount
-    $inv_balance_sql = "SELECT (total - amount_paid) as balance_due FROM invoices WHERE id = ? AND user_id = ?";
+    $inv_balance_sql = "SELECT (total - amount_paid) as balance_due FROM invoices WHERE id = ?";
     $inv_stmt = $pdo->prepare($inv_balance_sql);
-    $inv_stmt->execute([$invoice_id, $userId]);
+    $inv_stmt->execute([$invoice_id]);
     $balance = $inv_stmt->fetchColumn();
 
     if ($amount > $balance) {
@@ -44,15 +44,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         try {
             $pdo->beginTransaction();
 
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM credit_notes WHERE user_id = :user_id");
-            $stmt->execute(['user_id' => $userId]);
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM credit_notes");
+            $stmt->execute();
             $cn_count = $stmt->fetchColumn();
             $credit_note_number = 'CN-' . str_pad($cn_count + 1, 4, '0', STR_PAD_LEFT);
 
-            $sql = "INSERT INTO credit_notes (user_id, customer_id, invoice_id, credit_note_number, credit_note_date, amount, notes) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO credit_notes (customer_id, invoice_id, credit_note_number, credit_note_date, amount, notes)
+                    VALUES (?, ?, ?, ?, ?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$userId, $customer_id, $invoice_id, $credit_note_number, $credit_note_date, $amount, $notes]);
+            $stmt->execute([$customer_id, $invoice_id, $credit_note_number, $credit_note_date, $amount, $notes]);
             
             // Apply the credit to the invoice by increasing its amount_paid
             $update_sql = "UPDATE invoices SET amount_paid = amount_paid + ? WHERE id = ?";

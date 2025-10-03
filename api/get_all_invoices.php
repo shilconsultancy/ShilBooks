@@ -21,13 +21,12 @@ $customerId = (int)$_GET['customer_id'];
 try {
     // Fetch all invoices for the selected customer, now including the balance due
     $sql = "SELECT id, invoice_number, invoice_date, total, amount_paid, (total - amount_paid) as balance_due
-            FROM invoices 
-            WHERE user_id = :user_id 
-              AND customer_id = :customer_id
+            FROM invoices
+            WHERE customer_id = :customer_id
             ORDER BY invoice_date DESC";
 
     $stmt = $pdo->prepare($sql);
-    $stmt->execute(['user_id' => $userId, 'customer_id' => $customerId]);
+    $stmt->execute(['customer_id' => $customerId]);
     
     $invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 

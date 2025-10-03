@@ -43,15 +43,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE customers SET customer_type = :customer_type, name = :name, contact_person = :contact_person, email = :email, phone = :phone, address = :address WHERE id = :id AND user_id = :user_id";
+            $sql = "UPDATE customers SET customer_type = :customer_type, name = :name, contact_person = :contact_person, email = :email, phone = :phone, address = :address WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':id', $edit_id, PDO::PARAM_INT);
         } else {
-            $sql = "INSERT INTO customers (user_id, customer_type, name, contact_person, email, phone, address) VALUES (:user_id, :customer_type, :name, :contact_person, :email, :phone, :address)";
+            $sql = "INSERT INTO customers (customer_type, name, contact_person, email, phone, address) VALUES (:customer_type, :name, :contact_person, :email, :phone, :address)";
             $stmt = $pdo->prepare($sql);
         }
-        
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':customer_type', $customer_type, PDO::PARAM_STR);
         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
         $stmt->bindParam(':contact_person', $contact_person, PDO::PARAM_STR);
@@ -70,21 +68,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete a customer)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $sql = "DELETE FROM customers WHERE id = :id AND user_id = :user_id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-    if ($stmt->execute()) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        $sql = "DELETE FROM customers WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
-// Fetch all customers for the current user
-$sql = "SELECT * FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+// Fetch all customers
+$sql = "SELECT * FROM customers ORDER BY name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $customers = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -143,7 +141,9 @@ require_once '../../partials/sidebar.php';
                                                     data-email="<?php echo htmlspecialchars($customer['email']); ?>"
                                                     data-phone="<?php echo htmlspecialchars($customer['phone']); ?>"
                                                     data-address="<?php echo htmlspecialchars($customer['address']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $customer['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $customer['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

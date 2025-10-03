@@ -16,21 +16,20 @@ $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 // --- A/R Aging Calculations ---
 
 // Fetch all unpaid invoices created on or before the "as of" date
-$sql = "SELECT 
-            i.id, 
-            i.invoice_number, 
+$sql = "SELECT
+            i.id,
+            i.invoice_number,
             i.due_date,
             (i.total - i.amount_paid) as balance_due,
             c.name as customer_name,
             DATEDIFF(:as_of_date, i.due_date) as days_overdue
         FROM invoices i
         JOIN customers c ON i.customer_id = c.id
-        WHERE i.user_id = :user_id 
-        AND i.status IN ('sent', 'overdue')
+        WHERE i.status IN ('sent', 'overdue')
         AND i.invoice_date <= :as_of_date";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId, 'as_of_date' => $as_of_date]);
+$stmt->execute(['as_of_date' => $as_of_date]);
 $unpaid_invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Prepare buckets for categorizing invoices

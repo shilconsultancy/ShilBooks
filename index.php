@@ -23,8 +23,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 
     if (empty($error)) {
-        // Updated query to also select profile_picture
-        $sql = "SELECT id, name, email, password, profile_picture FROM users WHERE email = :email";
+        // Updated query to also select profile_picture and role
+        $sql = "SELECT id, name, email, password, profile_picture, role FROM users WHERE email = :email";
 
         if ($stmt = $pdo->prepare($sql)) {
             $stmt->bindParam(":email", $param_email, PDO::PARAM_STR);
@@ -45,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             $_SESSION["user_id"] = $id;
                             $_SESSION["user_name"] = $name;
                             $_SESSION["profile_picture"] = $profile_picture; // Save picture to session
+                            $_SESSION["user_role"] = $row["role"]; // Save role to session
 
                             // Redirect user to dashboard
                             header("location: dashboard.php");

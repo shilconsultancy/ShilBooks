@@ -26,11 +26,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if (empty($errors)) {
         if ($edit_id) {
             // Only update name and description, not type. Prevent editing non-editable accounts.
-            $sql = "UPDATE chart_of_accounts SET account_name = ?, description = ? WHERE id = ? AND user_id = ? AND is_editable = TRUE";
-            $params = [$name, $description, $edit_id, $userId];
+            $sql = "UPDATE chart_of_accounts SET account_name = ?, description = ? WHERE id = ? AND is_editable = TRUE";
+            $params = [$name, $description, $edit_id];
         } else {
-            $sql = "INSERT INTO chart_of_accounts (user_id, account_name, account_type, description) VALUES (?, ?, ?, ?)";
-            $params = [$userId, $name, $type, $description];
+            $sql = "INSERT INTO chart_of_accounts (account_name, account_type, description) VALUES (?, ?, ?)";
+            $params = [$name, $type, $description];
         }
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($params)) {
@@ -44,21 +44,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // --- Handle GET request (Delete Account) ---
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    // IMPORTANT: In a real system, check if account has transactions before deleting.
-    // We also prevent deleting non-editable system accounts.
-    $sql = "DELETE FROM chart_of_accounts WHERE id = ? AND user_id = ? AND is_editable = TRUE";
-    $stmt = $pdo->prepare($sql);
-    if ($stmt->execute([$delete_id, $userId])) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        // IMPORTANT: In a real system, check if account has transactions before deleting.
+        // We also prevent deleting non-editable system accounts.
+        $sql = "DELETE FROM chart_of_accounts WHERE id = ? AND is_editable = TRUE";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute([$delete_id])) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
 // Fetch all accounts for the user
-$sql = "SELECT * FROM chart_of_accounts WHERE user_id = :user_id ORDER BY account_type, account_name ASC";
+$sql = "SELECT * FROM chart_of_accounts ORDER BY account_type, account_name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId]);
+$stmt->execute();
 $all_accounts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Group accounts by type for display
@@ -111,7 +113,9 @@ require_once '../../partials/sidebar.php';
                                                     data-name="<?php echo htmlspecialchars($account['account_name']); ?>"
                                                     data-type="<?php echo htmlspecialchars($account['account_type']); ?>"
                                                     data-description="<?php echo htmlspecialchars($account['description']); ?>">Edit</button>
-                                                <a href="index.php?action=delete&id=<?php echo $account['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? This cannot be undone.');">Delete</a>
+                                                <?php if (hasPermission('admin')): ?>
+                                                    <a href="index.php?action=delete&id=<?php echo $account['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? This cannot be undone.');">Delete</a>
+                                                <?php endif; ?>
                                             <?php else: ?>
                                                 <span class="text-macgray-400 text-xs">System Account</span>
                                             <?php endif; ?>

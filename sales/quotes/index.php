@@ -9,16 +9,27 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 
 $userId = $_SESSION['user_id'];
 
-// Fetch all quotes for the current user, joining with customers table to get customer name
-$sql = "SELECT q.*, c.name AS customer_name 
+// Fetch all quotes, joining with customers table to get customer name
+$sql = "SELECT q.*, c.name AS customer_name
         FROM quotes q
         JOIN customers c ON q.customer_id = c.id
-        WHERE q.user_id = :user_id 
         ORDER BY q.quote_date DESC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $quotes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Handle Delete Action
+if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        $sql = "DELETE FROM quotes WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute(['id' => $delete_id])) {
+            header("location: index.php");
+            exit;
+        }
+    }
+}
 
 $pageTitle = 'Quotes';
 require_once '../../partials/header.php';
@@ -79,6 +90,9 @@ function getStatusBadgeClass($status) {
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $quote['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $quote['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

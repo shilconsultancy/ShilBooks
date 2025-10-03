@@ -49,15 +49,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE items SET name = :name, description = :description, item_type = :item_type, sale_price = :sale_price, purchase_price = :purchase_price, quantity = :quantity WHERE id = :id AND user_id = :user_id";
+            $sql = "UPDATE items SET name = :name, description = :description, item_type = :item_type, sale_price = :sale_price, purchase_price = :purchase_price, quantity = :quantity WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':id', $edit_id, PDO::PARAM_INT);
         } else {
-            $sql = "INSERT INTO items (user_id, name, description, item_type, sale_price, purchase_price, quantity) VALUES (:user_id, :name, :description, :item_type, :sale_price, :purchase_price, :quantity)";
+            $sql = "INSERT INTO items (name, description, item_type, sale_price, purchase_price, quantity) VALUES (:name, :description, :item_type, :sale_price, :purchase_price, :quantity)";
             $stmt = $pdo->prepare($sql);
         }
-        
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
         $stmt->bindParam(':description', $description, PDO::PARAM_STR);
         $stmt->bindParam(':item_type', $item_type, PDO::PARAM_STR);
@@ -77,22 +75,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete an item)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $sql = "DELETE FROM items WHERE id = :id AND user_id = :user_id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-    if ($stmt->execute()) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        $sql = "DELETE FROM items WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
 
-// Fetch all items for the current user
-$sql = "SELECT * FROM items WHERE user_id = :user_id ORDER BY name ASC";
+// Fetch all items
+$sql = "SELECT * FROM items ORDER BY name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $items = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -157,7 +155,9 @@ require_once '../partials/sidebar.php';
                                                     data-sale-price="<?php echo htmlspecialchars($item['sale_price']); ?>"
                                                     data-purchase-price="<?php echo htmlspecialchars($item['purchase_price']); ?>"
                                                     data-quantity="<?php echo htmlspecialchars($item['quantity']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $item['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this item?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $item['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this item?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

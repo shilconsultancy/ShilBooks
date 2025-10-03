@@ -11,9 +11,9 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // --- Fetch accounts for the dropdowns ---
-$accounts_sql = "SELECT id, account_name, account_type FROM chart_of_accounts WHERE user_id = :user_id ORDER BY account_name ASC";
+$accounts_sql = "SELECT id, account_name, account_type FROM chart_of_accounts ORDER BY account_name ASC";
 $accounts_stmt = $pdo->prepare($accounts_sql);
-$accounts_stmt->execute(['user_id' => $userId]);
+$accounts_stmt->execute();
 $accounts = $accounts_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Handle Form Submission ---
@@ -52,9 +52,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
 
             // 1. Insert into the main `journal_entries` table
-            $sql = "INSERT INTO journal_entries (user_id, entry_date, description) VALUES (?, ?, ?)";
+            $sql = "INSERT INTO journal_entries (entry_date, description) VALUES (?, ?)";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$userId, $entry_date, $description]);
+            $stmt->execute([$entry_date, $description]);
             $journal_entry_id = $pdo->lastInsertId();
 
             // 2. Loop through and insert into `journal_entry_items`

@@ -28,24 +28,22 @@ $customerId = (int)$_GET['customer_id'];
 try {
     // Fetch all invoices for the selected customer that are NOT fully paid
     // We also calculate the balance_due in the SQL query
-    $sql = "SELECT 
-                id, 
-                invoice_number, 
+    $sql = "SELECT
+                id,
+                invoice_number,
                 invoice_date,
                 due_date,
-                total, 
+                total,
                 amount_paid,
                 (total - amount_paid) as balance_due
-            FROM invoices 
-            WHERE user_id = :user_id 
-              AND customer_id = :customer_id
+            FROM invoices
+            WHERE customer_id = :customer_id
               AND (status = 'sent' OR status = 'overdue' OR (status = 'paid' AND amount_paid < total))
               AND (total - amount_paid) > 0.00
             ORDER BY invoice_date ASC";
 
     $stmt = $pdo->prepare($sql);
     $stmt->execute([
-        'user_id' => $userId,
         'customer_id' => $customerId
     ]);
     

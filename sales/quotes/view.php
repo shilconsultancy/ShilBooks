@@ -23,9 +23,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
     $new_status = $_POST['new_status'];
     $allowed_statuses = ['draft', 'sent', 'accepted', 'rejected'];
     if (in_array($new_status, $allowed_statuses)) {
-        $sql = "UPDATE quotes SET status = :status WHERE id = :id AND user_id = :user_id";
+        $sql = "UPDATE quotes SET status = :status WHERE id = :id";
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute(['status' => $new_status, 'id' => $quote_id, 'user_id' => $userId])) {
+        if ($stmt->execute(['status' => $new_status, 'id' => $quote_id])) {
             $message = "Status updated successfully!";
         }
     }
@@ -33,11 +33,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
 
 // Fetch quote details
 $sql = "SELECT q.*, c.name as customer_name, c.email as customer_email, c.address as customer_address
-        FROM quotes q 
+        FROM quotes q
         JOIN customers c ON q.customer_id = c.id
-        WHERE q.id = :id AND q.user_id = :user_id";
+        WHERE q.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $quote_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $quote_id]);
 $quote = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$quote) {

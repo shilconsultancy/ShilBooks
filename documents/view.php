@@ -12,8 +12,8 @@ $doc_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($doc_id > 0) {
     // Fetch the document record from the database, ensuring it belongs to the logged-in user
-    $stmt = $pdo->prepare("SELECT * FROM documents WHERE id = ? AND user_id = ?");
-    $stmt->execute([$doc_id, $userId]);
+    $stmt = $pdo->prepare("SELECT * FROM documents WHERE id = ?");
+    $stmt->execute([$doc_id]);
     $doc = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($doc) {

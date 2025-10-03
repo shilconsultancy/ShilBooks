@@ -11,15 +11,13 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // --- Fetch data for form dropdowns ---
-$customer_sql = "SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC";
+$customer_sql = "SELECT id, name FROM customers ORDER BY name ASC";
 $customer_stmt = $pdo->prepare($customer_sql);
-$customer_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$item_sql = "SELECT id, name, description, sale_price, item_type FROM items WHERE user_id = :user_id ORDER BY name ASC";
+$item_sql = "SELECT id, name, description, sale_price, item_type FROM items ORDER BY name ASC";
 $item_stmt = $pdo->prepare($item_sql);
-$item_stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -39,12 +37,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         try {
             $pdo->beginTransaction();
 
-            $sql = "INSERT INTO recurring_invoices (user_id, customer_id, start_date, end_date, frequency, status, subtotal, tax, total, notes) 
-                    VALUES (:user_id, :customer_id, :start_date, :end_date, :frequency, :status, :subtotal, :tax, :total, :notes)";
-            
+            $sql = "INSERT INTO recurring_invoices (customer_id, start_date, end_date, frequency, status, subtotal, tax, total, notes)
+                    VALUES (:customer_id, :start_date, :end_date, :frequency, :status, :subtotal, :tax, :total, :notes)";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
-                'user_id' => $userId,
                 'customer_id' => $_POST['customer_id'],
                 'start_date' => $_POST['start_date'],
                 'end_date' => !empty($_POST['end_date']) ? $_POST['end_date'] : null,

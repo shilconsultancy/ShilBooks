@@ -11,14 +11,14 @@ $userId = $_SESSION['user_id'];
 $errors = [];
 
 // --- Fetch data for form dropdowns ---
-$cat_sql = "SELECT id, name FROM expense_categories WHERE user_id = :user_id ORDER BY name ASC";
+$cat_sql = "SELECT id, name FROM expense_categories ORDER BY name ASC";
 $cat_stmt = $pdo->prepare($cat_sql);
-$cat_stmt->execute(['user_id' => $userId]);
+$cat_stmt->execute();
 $categories = $cat_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$ven_sql = "SELECT id, name FROM vendors WHERE user_id = :user_id ORDER BY name ASC";
+$ven_sql = "SELECT id, name FROM vendors ORDER BY name ASC";
 $ven_stmt = $pdo->prepare($ven_sql);
-$ven_stmt->execute(['user_id' => $userId]);
+$ven_stmt->execute();
 $vendors = $ven_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // --- Handle POST request (Add or Edit an Expense) ---
@@ -39,11 +39,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE expenses SET expense_date = ?, amount = ?, category_id = ?, vendor_id = ?, description = ?, notes = ? WHERE id = ? AND user_id = ?";
-            $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes, $edit_id, $userId];
+            $sql = "UPDATE expenses SET expense_date = ?, amount = ?, category_id = ?, vendor_id = ?, description = ?, notes = ? WHERE id = ?";
+            $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes, $edit_id];
         } else {
-            $sql = "INSERT INTO expenses (user_id, expense_date, amount, category_id, vendor_id, description, notes) VALUES (?, ?, ?, ?, ?, ?, ?)";
-            $params = [$userId, $expense_date, $amount, $category_id, $vendor_id, $description, $notes];
+            $sql = "INSERT INTO expenses (expense_date, amount, category_id, vendor_id, description, notes) VALUES (?, ?, ?, ?, ?, ?)";
+            $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes];
         }
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute($params)) {
@@ -57,24 +57,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // --- Handle GET request (Delete an Expense) ---
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $sql = "DELETE FROM expenses WHERE id = :id AND user_id = :user_id";
-    $stmt = $pdo->prepare($sql);
-    if ($stmt->execute(['id' => $delete_id, 'user_id' => $userId])) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        $sql = "DELETE FROM expenses WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        if ($stmt->execute(['id' => $delete_id])) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
 // --- Fetch all expenses for display ---
-$sql = "SELECT e.*, ec.name as category_name, v.name as vendor_name 
+$sql = "SELECT e.*, ec.name as category_name, v.name as vendor_name
         FROM expenses e
         JOIN expense_categories ec ON e.category_id = ec.id
         LEFT JOIN vendors v ON e.vendor_id = v.id
-        WHERE e.user_id = :user_id 
         ORDER BY e.expense_date DESC";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId]);
+$stmt->execute();
 $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'Manage Expenses';
@@ -124,7 +125,9 @@ require_once '../../partials/sidebar.php';
                                                 data-vendor-id="<?php echo $expense['vendor_id']; ?>"
                                                 data-description="<?php echo htmlspecialchars($expense['description']); ?>"
                                                 data-notes="<?php echo htmlspecialchars($expense['notes']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $expense['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $expense['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

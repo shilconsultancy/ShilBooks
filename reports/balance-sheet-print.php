@@ -11,16 +11,16 @@ $userId = $_SESSION['user_id'];
 $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 
 // --- ASSETS ---
-$cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE user_id = ? AND DATE(created_at) <= ?");
-$cash_stmt->execute([$userId, $as_of_date]);
+$cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE DATE(created_at) <= ?");
+$cash_stmt->execute([$as_of_date]);
 $totalCash = $cash_stmt->fetchColumn() ?? 0;
 
-$ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE user_id = ? AND status IN ('sent', 'overdue') AND invoice_date <= ?");
-$ar_stmt->execute([$userId, $as_of_date]);
+$ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue') AND invoice_date <= ?");
+$ar_stmt->execute([$as_of_date]);
 $totalAR = $ar_stmt->fetchColumn() ?? 0;
 
-$inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE user_id = ? AND item_type = 'product'");
-$inv_stmt->execute([$userId]);
+$inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE item_type = 'product'");
+$inv_stmt->execute();
 $totalInventory = $inv_stmt->fetchColumn() ?? 0;
 
 $totalAssets = $totalCash + $totalAR + $totalInventory;
@@ -30,21 +30,21 @@ $totalLiabilities = 0.00; // Placeholder
 
 // --- EQUITY ---
 $revenue_start_date = '1970-01-01';
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE user_id = ? AND status = 'paid' AND invoice_date BETWEEN ? AND ?");
-$paid_invoices_total_stmt->execute([$userId, $revenue_start_date, $as_of_date]);
+$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+$paid_invoices_total_stmt->execute([$revenue_start_date, $as_of_date]);
 $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
 
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE user_id = ? AND receipt_date BETWEEN ? AND ?");
-$receipts_total_stmt->execute([$userId, $revenue_start_date, $as_of_date]);
+$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
+$receipts_total_stmt->execute([$revenue_start_date, $as_of_date]);
 $grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
 
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE user_id = ? AND credit_note_date BETWEEN ? AND ?");
-$credit_notes_stmt->execute([$userId, $revenue_start_date, $as_of_date]);
+$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+$credit_notes_stmt->execute([$revenue_start_date, $as_of_date]);
 $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
 $netRevenue = $grossRevenue - $totalCredits;
 
-$expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND expense_date BETWEEN ? AND ?");
-$expenses_stmt->execute([$userId, $revenue_start_date, $as_of_date]);
+$expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
+$expenses_stmt->execute([$revenue_start_date, $as_of_date]);
 $totalExpenses = $expenses_stmt->fetchColumn() ?? 0;
 $retainedEarnings = $netRevenue - $totalExpenses;
 
@@ -53,8 +53,8 @@ $totalEquity = $retainedEarnings + $ownersEquity;
 $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

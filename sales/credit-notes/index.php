@@ -12,52 +12,53 @@ $errors = [];
 
 // Handle Delete Action
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $cn_id_to_delete = (int)$_GET['id'];
-    try {
-        $pdo->beginTransaction();
-        
-        $sql = "SELECT invoice_id, amount FROM credit_notes WHERE id = :id AND user_id = :user_id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute(['id' => $cn_id_to_delete, 'user_id' => $userId]);
-        $credit_note = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($credit_note) {
-            // Reverse the credit on the original invoice
-            $update_sql = "UPDATE invoices SET amount_paid = amount_paid - ? WHERE id = ?";
-            $pdo->prepare($update_sql)->execute([$credit_note['amount'], $credit_note['invoice_id']]);
-            
-            // Re-evaluate invoice status
-            $status_sql = "UPDATE invoices SET status = 'sent' WHERE id = ? AND amount_paid < total";
-            $pdo->prepare($status_sql)->execute([$credit_note['invoice_id']]);
-            
-            // Delete the credit note
-            $delete_sql = "DELETE FROM credit_notes WHERE id = ?";
-            $pdo->prepare($delete_sql)->execute([$cn_id_to_delete]);
-            
-            $pdo->commit();
-            $message = "Credit Note deleted and invoice balance restored.";
-        } else {
+    if (hasPermission('admin')) {
+        $cn_id_to_delete = (int)$_GET['id'];
+        try {
+            $pdo->beginTransaction();
+
+            $sql = "SELECT invoice_id, amount FROM credit_notes WHERE id = :id";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute(['id' => $cn_id_to_delete]);
+            $credit_note = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if ($credit_note) {
+                // Reverse the credit on the original invoice
+                $update_sql = "UPDATE invoices SET amount_paid = amount_paid - ? WHERE id = ?";
+                $pdo->prepare($update_sql)->execute([$credit_note['amount'], $credit_note['invoice_id']]);
+
+                // Re-evaluate invoice status
+                $status_sql = "UPDATE invoices SET status = 'sent' WHERE id = ? AND amount_paid < total";
+                $pdo->prepare($status_sql)->execute([$credit_note['invoice_id']]);
+
+                // Delete the credit note
+                $delete_sql = "DELETE FROM credit_notes WHERE id = ?";
+                $pdo->prepare($delete_sql)->execute([$cn_id_to_delete]);
+
+                $pdo->commit();
+                $message = "Credit Note deleted and invoice balance restored.";
+            } else {
+                $pdo->rollBack();
+            }
+        } catch (Exception $e) {
             $pdo->rollBack();
+            $errors[] = "Error deleting credit note: " . $e->getMessage();
         }
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $errors[] = "Error deleting credit note: " . $e->getMessage();
     }
 }
 
 // Fetch all credit notes for display
-$sql = "SELECT 
-            cn.*, 
-            c.name AS customer_name, 
-            i.invoice_number 
-        FROM credit_notes cn 
-        JOIN customers c ON cn.customer_id = c.id 
-        LEFT JOIN invoices i ON cn.invoice_id = i.id 
-        WHERE cn.user_id = :user_id 
+$sql = "SELECT
+            cn.*,
+            c.name AS customer_name,
+            i.invoice_number
+        FROM credit_notes cn
+        JOIN customers c ON cn.customer_id = c.id
+        LEFT JOIN invoices i ON cn.invoice_id = i.id
         ORDER BY cn.credit_note_date DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId]);
+$stmt->execute();
 $credit_notes = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'Credit Notes';
@@ -103,7 +104,9 @@ require_once '../../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-900">৳<?php echo htmlspecialchars(number_format($cn['amount'], 2)); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $cn['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
-                                            <a href="index.php?action=delete&id=<?php echo $cn['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? This will reverse the credit on the linked invoice.');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $cn['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? This will reverse the credit on the linked invoice.');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

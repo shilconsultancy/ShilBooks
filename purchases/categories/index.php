@@ -25,15 +25,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE expense_categories SET name = :name WHERE id = :id AND user_id = :user_id";
+            $sql = "UPDATE expense_categories SET name = :name WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':id', $edit_id, PDO::PARAM_INT);
         } else {
-            $sql = "INSERT INTO expense_categories (user_id, name) VALUES (:user_id, :name)";
+            $sql = "INSERT INTO expense_categories (name) VALUES (:name)";
             $stmt = $pdo->prepare($sql);
         }
-        
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
 
         if ($stmt->execute()) {
@@ -47,22 +45,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete a Category)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    // You might want to check if this category is in use before deleting
-    $sql = "DELETE FROM expense_categories WHERE id = :id AND user_id = :user_id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-    if ($stmt->execute()) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        // You might want to check if this category is in use before deleting
+        $sql = "DELETE FROM expense_categories WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
-// Fetch all categories for the current user
-$sql = "SELECT * FROM expense_categories WHERE user_id = :user_id ORDER BY name ASC";
+// Fetch all categories
+$sql = "SELECT * FROM expense_categories ORDER BY name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $categories = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -104,7 +102,9 @@ require_once '../../partials/sidebar.php';
                                             <button class="editBtn text-macblue-600 hover:text-macblue-900" 
                                                     data-id="<?php echo $category['id']; ?>"
                                                     data-name="<?php echo htmlspecialchars($category['name']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $category['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? Deleting a category will fail if it is currently used by any expenses.');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $category['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? Deleting a category will fail if it is currently used by any expenses.');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

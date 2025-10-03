@@ -25,8 +25,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
             
             // Insert transaction
-            $sql = "INSERT INTO bank_transactions (user_id, account_id, transaction_date, description, type, amount) VALUES (?, ?, ?, ?, ?, ?)";
-            $pdo->prepare($sql)->execute([$userId, $account_id, $date, $desc, $type, $amount]);
+            $sql = "INSERT INTO bank_transactions (account_id, transaction_date, description, type, amount) VALUES (?, ?, ?, ?, ?)";
+            $pdo->prepare($sql)->execute([$account_id, $date, $desc, $type, $amount]);
             
             // Update account balance
             if ($type == 'deposit') {
@@ -49,8 +49,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 // Fetch account details
-$stmt = $pdo->prepare("SELECT * FROM bank_accounts WHERE id = ? AND user_id = ?");
-$stmt->execute([$account_id, $userId]);
+$stmt = $pdo->prepare("SELECT * FROM bank_accounts WHERE id = ?");
+$stmt->execute([$account_id]);
 $account = $stmt->fetch();
 if (!$account) { header("location: index.php"); exit; }
 

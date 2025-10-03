@@ -35,16 +35,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $old_items = $old_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($old_items as $item) {
-                $restore_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                $restore_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product'";
                 $restore_stmt = $pdo->prepare($restore_sql);
-                $restore_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id'], 'user_id' => $userId]);
+                $restore_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id']]);
             }
 
             // 2. Update the main `sales_receipts` table
-            $sql = "UPDATE sales_receipts SET customer_id = :customer_id, receipt_date = :receipt_date, 
-                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes 
-                    WHERE id = :id AND user_id = :user_id";
-            
+            $sql = "UPDATE sales_receipts SET customer_id = :customer_id, receipt_date = :receipt_date,
+                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes
+                    WHERE id = :id";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 'customer_id' => $_POST['customer_id'],
@@ -53,8 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'tax' => $_POST['tax'],
                 'total' => $_POST['total'],
                 'notes' => $_POST['notes'],
-                'id' => $receipt_id,
-                'user_id' => $userId
+                'id' => $receipt_id
             ]);
 
             // 3. Delete old line items
@@ -76,9 +75,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'price' => $_POST['price'][$key],
                         'total' => $_POST['line_total'][$key]
                     ]);
-                    $deduct_sql = "UPDATE items SET quantity = quantity - :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                    $deduct_sql = "UPDATE items SET quantity = quantity - :quantity WHERE id = :id AND item_type = 'product'";
                     $deduct_stmt = $pdo->prepare($deduct_sql);
-                    $deduct_stmt->execute(['quantity' => $quantity, 'id' => $itemId, 'user_id' => $userId]);
+                    $deduct_stmt->execute(['quantity' => $quantity, 'id' => $itemId]);
                 }
             }
 
@@ -95,9 +94,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 // --- Fetch existing data for the form ---
-$receipt_sql = "SELECT * FROM sales_receipts WHERE id = :id AND user_id = :user_id";
+$receipt_sql = "SELECT * FROM sales_receipts WHERE id = :id";
 $receipt_stmt = $pdo->prepare($receipt_sql);
-$receipt_stmt->execute(['id' => $receipt_id, 'user_id' => $userId]);
+$receipt_stmt->execute(['id' => $receipt_id]);
 $receipt = $receipt_stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$receipt) {
@@ -111,11 +110,11 @@ $receipt_items_stmt->execute(['receipt_id' => $receipt_id]);
 $receipt_items = $receipt_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Customers & Items for dropdowns
-$customer_stmt = $pdo->prepare("SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC");
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt = $pdo->prepare("SELECT id, name FROM customers ORDER BY name ASC");
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
-$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC");
-$item_stmt->execute(['user_id' => $userId]);
+$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items ORDER BY name ASC");
+$item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

@@ -11,9 +11,9 @@ $journal_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($journal_id == 0) { header("location: index.php"); exit; }
 
 // Fetch journal entry details
-$sql = "SELECT * FROM journal_entries WHERE id = :id AND user_id = :user_id";
+$sql = "SELECT * FROM journal_entries WHERE id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $journal_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $journal_id]);
 $journal = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$journal) { header("location: index.php"); exit; }

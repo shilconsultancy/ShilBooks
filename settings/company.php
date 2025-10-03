@@ -1,6 +1,13 @@
 <?php
 require_once '../config.php';
 
+// Admin-only access check
+if (!hasPermission('admin')) {
+    // Redirect non-admins to the dashboard or show an error
+    header("location: " . BASE_PATH . "dashboard.php");
+    exit;
+}
+
 // Security Check
 if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php");
@@ -24,10 +31,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if ($key === 'csrf_token') {
                 continue;
             }
-            $sql = "INSERT INTO settings (user_id, setting_key, setting_value) VALUES (?, ?, ?) 
+            $sql = "INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)
                     ON DUPLICATE KEY UPDATE setting_value = ?";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([$userId, $key, trim($value), trim($value)]);
+            $stmt->execute([$key, trim($value), trim($value)]);
         }
 
         // --- Handle Logo Upload ---
@@ -37,15 +44,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $file_extension = strtolower(pathinfo(basename($_FILES["company_logo"]["name"]), PATHINFO_EXTENSION));
 
             if (in_array($_FILES["company_logo"]["type"], $allowed_types) && in_array($file_extension, $allowed_extensions)) {
-                $upload_dir = '../uploads/' . $userId . '/';
-                if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
+                $upload_dir = '../uploads/company/';
+
+                // Create directory if it doesn't exist
+                if (!is_dir($upload_dir)) {
+                    if (!mkdir($upload_dir, 0755, true)) {
+                        throw new Exception("Failed to create upload directory. Please check permissions.");
+                    }
+                }
+
+                // Ensure directory is writable
+                if (!is_writable($upload_dir)) {
+                    throw new Exception("Upload directory is not writable. Please check permissions.");
+                }
 
                 $stored_filename = 'logo.' . $file_extension;
-                
+
                 if (move_uploaded_file($_FILES["company_logo"]["tmp_name"], $upload_dir . $stored_filename)) {
-                    $sql = "INSERT INTO settings (user_id, setting_key, setting_value) VALUES (?, 'company_logo', ?) ON DUPLICATE KEY UPDATE setting_value = ?";
-                    $pdo->prepare($sql)->execute([$userId, $stored_filename, $stored_filename]);
-                } else { throw new Exception("Failed to move uploaded logo."); }
+                    $sql = "INSERT INTO settings (setting_key, setting_value) VALUES ('company_logo', ?) ON DUPLICATE KEY UPDATE setting_value = ?";
+                    $pdo->prepare($sql)->execute([$stored_filename, $stored_filename]);
+                } else {
+                    throw new Exception("Failed to move uploaded logo. Please check directory permissions.");
+                }
             } else { throw new Exception("Invalid logo file type. Please use JPG, PNG, or GIF."); }
         }
 
@@ -58,8 +78,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // --- Fetch all existing settings to display in the form ---
-$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ?");
-$stmt->execute([$userId]);
+$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
+$stmt->execute();
 $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 
@@ -93,7 +113,7 @@ require_once '../partials/sidebar.php';
                             <label for="company_logo" class="block text-sm font-medium text-gray-700">Company Logo</label>
                             <input type="file" name="company_logo" id="company_logo" class="mt-1 block w-full text-sm text-macgray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-macblue-50 file:text-macblue-700 hover:file:bg-macblue-100">
                              <?php if ($s('company_logo')): ?>
-                                <img src="<?php echo BASE_PATH . 'uploads/' . $userId . '/' . $s('company_logo') . '?t=' . time(); ?>" alt="Current Logo" class="mt-2 h-16 w-auto">
+                                <img src="<?php echo BASE_PATH . 'uploads/company/' . $s('company_logo') . '?t=' . time(); ?>" alt="Current Logo" class="mt-2 h-16 w-auto">
                             <?php endif; ?>
                         </div>
                     </div>

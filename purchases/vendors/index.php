@@ -31,15 +31,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($errors)) {
         if ($edit_id) {
-            $sql = "UPDATE vendors SET name = :name, email = :email, phone = :phone, address = :address WHERE id = :id AND user_id = :user_id";
+            $sql = "UPDATE vendors SET name = :name, email = :email, phone = :phone, address = :address WHERE id = :id";
             $stmt = $pdo->prepare($sql);
             $stmt->bindParam(':id', $edit_id, PDO::PARAM_INT);
         } else {
-            $sql = "INSERT INTO vendors (user_id, name, email, phone, address) VALUES (:user_id, :name, :email, :phone, :address)";
+            $sql = "INSERT INTO vendors (name, email, phone, address) VALUES (:name, :email, :phone, :address)";
             $stmt = $pdo->prepare($sql);
         }
-        
-        $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
         $stmt->bindParam(':name', $name, PDO::PARAM_STR);
         $stmt->bindParam(':email', $email, PDO::PARAM_STR);
         $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
@@ -56,21 +54,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete a vendor)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $delete_id = (int)$_GET['id'];
-    $sql = "DELETE FROM vendors WHERE id = :id AND user_id = :user_id";
-    $stmt = $pdo->prepare($sql);
-    $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
-    $stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
-    if ($stmt->execute()) {
-        header("location: index.php");
-        exit;
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        $sql = "DELETE FROM vendors WHERE id = :id";
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            header("location: index.php");
+            exit;
+        }
     }
 }
 
-// Fetch all vendors for the current user
-$sql = "SELECT * FROM vendors WHERE user_id = :user_id ORDER BY name ASC";
+// Fetch all vendors
+$sql = "SELECT * FROM vendors ORDER BY name ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $vendors = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -119,7 +117,9 @@ require_once '../../partials/sidebar.php';
                                                     data-email="<?php echo htmlspecialchars($vendor['email']); ?>"
                                                     data-phone="<?php echo htmlspecialchars($vendor['phone']); ?>"
                                                     data-address="<?php echo htmlspecialchars($vendor['address']); ?>">Edit</button>
-                                            <a href="index.php?action=delete&id=<?php echo $vendor['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $vendor['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

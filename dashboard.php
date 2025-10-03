@@ -18,26 +18,26 @@ $userId = $_SESSION['user_id'];
 // --- Dashboard Data Fetching ---
 
 // Helper function to calculate Net Revenue for a given period
-function getNetRevenueForPeriod($pdo, $userId, $startDate, $endDate) {
-    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE user_id = ? AND status = 'paid' AND invoice_date BETWEEN ? AND ?");
-    $paid_invoices_total_stmt->execute([$userId, $startDate, $endDate]);
+function getNetRevenueForPeriod($pdo, $startDate, $endDate) {
+    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+    $paid_invoices_total_stmt->execute([$startDate, $endDate]);
     $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
 
-    $receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE user_id = ? AND receipt_date BETWEEN ? AND ?");
-    $receipts_total_stmt->execute([$userId, $startDate, $endDate]);
+    $receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
+    $receipts_total_stmt->execute([$startDate, $endDate]);
     $grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
 
-    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE user_id = ? AND credit_note_date BETWEEN ? AND ?");
-    $credit_notes_stmt->execute([$userId, $startDate, $endDate]);
+    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+    $credit_notes_stmt->execute([$startDate, $endDate]);
     $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
-    
+
     return $grossRevenue - $totalCredits;
 }
 
 // Helper function to calculate Expenses for a given period
-function getExpensesForPeriod($pdo, $userId, $startDate, $endDate) {
-    $expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE user_id = ? AND expense_date BETWEEN ? AND ?");
-    $expenses_stmt->execute([$userId, $startDate, $endDate]);
+function getExpensesForPeriod($pdo, $startDate, $endDate) {
+    $expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
+    $expenses_stmt->execute([$startDate, $endDate]);
     return $expenses_stmt->fetchColumn() ?? 0;
 }
 
@@ -60,33 +60,33 @@ $end_this_month = date('Y-m-t');
 $start_last_month = date('Y-m-01', strtotime('first day of last month'));
 $end_last_month = date('Y-m-t', strtotime('last day of last month'));
 
-$revenue_this_month = getNetRevenueForPeriod($pdo, $userId, $start_this_month, $end_this_month);
-$expenses_this_month = getExpensesForPeriod($pdo, $userId, $start_this_month, $end_this_month);
+$revenue_this_month = getNetRevenueForPeriod($pdo, $start_this_month, $end_this_month);
+$expenses_this_month = getExpensesForPeriod($pdo, $start_this_month, $end_this_month);
 $profit_this_month = $revenue_this_month - $expenses_this_month;
 
-$revenue_last_month = getNetRevenueForPeriod($pdo, $userId, $start_last_month, $end_last_month);
-$expenses_last_month = getExpensesForPeriod($pdo, $userId, $start_last_month, $end_last_month);
+$revenue_last_month = getNetRevenueForPeriod($pdo, $start_last_month, $end_last_month);
+$expenses_last_month = getExpensesForPeriod($pdo, $start_last_month, $end_last_month);
 $profit_last_month = $revenue_last_month - $expenses_last_month;
 
-$outstanding_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE user_id = ? AND status IN ('sent', 'overdue')");
-$outstanding_stmt->execute([$userId]);
+$outstanding_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue')");
+$outstanding_stmt->execute();
 $outstandingAmount = $outstanding_stmt->fetchColumn() ?? 0;
 
-$recent_invoices_sql = "SELECT i.*, c.name as customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.user_id = ? ORDER BY i.invoice_date DESC, i.id DESC LIMIT 5";
+$recent_invoices_sql = "SELECT i.*, c.name as customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id ORDER BY i.invoice_date DESC, i.id DESC LIMIT 5";
 $recent_invoices_stmt = $pdo->prepare($recent_invoices_sql);
-$recent_invoices_stmt->execute([$userId]);
+$recent_invoices_stmt->execute();
 $recentInvoices = $recent_invoices_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $activity = [];
-$payments_sql = "SELECT p.amount, p.payment_date as date, c.name as customer_name FROM payments p JOIN customers c ON p.customer_id = c.id WHERE p.user_id = ? ORDER BY p.payment_date DESC LIMIT 3";
+$payments_sql = "SELECT p.amount, p.payment_date as date, c.name as customer_name FROM payments p JOIN customers c ON p.customer_id = c.id ORDER BY p.payment_date DESC LIMIT 3";
 $payments_stmt = $pdo->prepare($payments_sql);
-$payments_stmt->execute([$userId]);
+$payments_stmt->execute();
 while($row = $payments_stmt->fetch(PDO::FETCH_ASSOC)) {
     $activity[] = ['type' => 'payment', 'data' => $row, 'date' => new DateTime($row['date'])];
 }
-$expenses_sql = "SELECT e.amount, e.expense_date as date, ec.name as category_name FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id WHERE e.user_id = ? ORDER BY e.expense_date DESC LIMIT 3";
+$expenses_sql = "SELECT e.amount, e.expense_date as date, ec.name as category_name FROM expenses e JOIN expense_categories ec ON e.category_id = ec.id ORDER BY e.expense_date DESC LIMIT 3";
 $expenses_stmt = $pdo->prepare($expenses_sql);
-$expenses_stmt->execute([$userId]);
+$expenses_stmt->execute();
 while($row = $expenses_stmt->fetch(PDO::FETCH_ASSOC)) {
     $activity[] = ['type' => 'expense', 'data' => $row, 'date' => new DateTime($row['date'])];
 }

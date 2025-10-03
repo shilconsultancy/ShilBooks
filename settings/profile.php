@@ -43,12 +43,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
         $file_extension = strtolower(pathinfo(basename($_FILES["profile_picture"]["name"]), PATHINFO_EXTENSION));
 
         if (in_array($_FILES["profile_picture"]["type"], $allowed_types) && in_array($file_extension, $allowed_extensions)) {
-            $upload_dir = '../uploads/' . $userId . '/profile/';
-            if (!is_dir($upload_dir)) { mkdir($upload_dir, 0755, true); }
+            $upload_dir = '../uploads/company/profile/';
+
+            // Create directory if it doesn't exist
+            if (!is_dir($upload_dir)) {
+                if (!mkdir($upload_dir, 0755, true)) {
+                    $errors[] = "Failed to create profile picture directory.";
+                    return;
+                }
+            }
+
+            // Ensure directory is writable
+            if (!is_writable($upload_dir)) {
+                $errors[] = "Profile picture directory is not writable.";
+                return;
+            }
+
             $stored_filename = 'pfp.' . $file_extension;
             if (move_uploaded_file($_FILES["profile_picture"]["tmp_name"], $upload_dir . $stored_filename)) {
                 $profile_picture_filename = $stored_filename;
-            } else { $errors[] = "Failed to upload profile picture."; }
+            } else {
+                $errors[] = "Failed to upload profile picture. Please check directory permissions.";
+            }
         } else { $errors[] = "Invalid profile picture file type (JPG, PNG, GIF only)."; }
     }
 
@@ -132,7 +148,7 @@ require_once '../partials/sidebar.php';
                             <label class="block text-sm font-medium text-gray-700">Profile Picture</label>
                             <div class="mt-1 flex items-center">
                                 <?php if (!empty($user['profile_picture'])): ?>
-                                    <img src="<?php echo BASE_PATH . 'uploads/' . $userId . '/profile/' . $user['profile_picture'] . '?t=' . time(); ?>" alt="Profile Picture" class="h-24 w-24 rounded-full object-cover">
+                                    <img src="<?php echo BASE_PATH . 'uploads/company/profile/' . $user['profile_picture'] . '?t=' . time(); ?>" alt="Profile Picture" class="h-24 w-24 rounded-full object-cover">
                                 <?php else: ?>
                                      <span class="h-24 w-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center"><i data-feather="user" class="h-12 w-12 text-gray-400"></i></span>
                                 <?php endif; ?>

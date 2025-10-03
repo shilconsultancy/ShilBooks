@@ -13,21 +13,22 @@ $errors = [];
 
 // Handle Delete Action
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $invoice_id_to_delete = (int)$_GET['id'];
+    if (hasPermission('admin')) {
+        $invoice_id_to_delete = (int)$_GET['id'];
     try {
         $pdo->beginTransaction();
-        $check_sql = "SELECT id FROM invoices WHERE id = :id AND user_id = :user_id";
+        $check_sql = "SELECT id FROM invoices WHERE id = :id";
         $check_stmt = $pdo->prepare($check_sql);
-        $check_stmt->execute(['id' => $invoice_id_to_delete, 'user_id' => $userId]);
+        $check_stmt->execute(['id' => $invoice_id_to_delete]);
         if ($check_stmt->fetch()) {
             $items_sql = "SELECT item_id, quantity FROM invoice_items WHERE invoice_id = :invoice_id";
             $items_stmt = $pdo->prepare($items_sql);
             $items_stmt->execute(['invoice_id' => $invoice_id_to_delete]);
             $items_to_restore = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
             foreach ($items_to_restore as $item) {
-                $update_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                $update_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product'";
                 $update_stmt = $pdo->prepare($update_sql);
-                $update_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id'], 'user_id' => $userId]);
+                $update_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id']]);
             }
             $stmt = $pdo->prepare("DELETE FROM invoice_items WHERE invoice_id = :invoice_id");
             $stmt->execute(['invoice_id' => $invoice_id_to_delete]);
@@ -42,12 +43,12 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
         $pdo->rollBack();
         $errors[] = "Error deleting invoice: " . $e->getMessage();
     }
+    }
 }
 
-// Fetch all invoices for the current user
-$sql = "SELECT i.*, c.name AS customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.user_id = :user_id ORDER BY i.invoice_date DESC";
+// Fetch all invoices
+$sql = "SELECT i.*, c.name AS customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id ORDER BY i.invoice_date DESC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -102,7 +103,9 @@ function getStatusBadgeClass($status) {
                                         <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 py-1 text-xs font-medium rounded-full <?php echo getStatusBadgeClass($invoice['status']); ?>"><?php echo htmlspecialchars(ucfirst($invoice['status'])); ?></span></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $invoice['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
-                                            <a href="index.php?action=delete&id=<?php echo $invoice['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to permanently delete this invoice? This will restore item quantities to inventory.');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $invoice['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to permanently delete this invoice? This will restore item quantities to inventory.');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -13,25 +13,51 @@ $errors = [];
 
 // Handle Delete Action
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    // ... (delete logic remains the same)
+    if (hasPermission('admin')) {
+        $delete_id = (int)$_GET['id'];
+        try {
+            $pdo->beginTransaction();
+
+            // Check if the payment exists
+            $check_sql = "SELECT id FROM payments WHERE id = :id";
+            $check_stmt = $pdo->prepare($check_sql);
+            $check_stmt->execute(['id' => $delete_id]);
+
+            if ($check_stmt->fetch()) {
+                // Delete payment items first
+                $stmt = $pdo->prepare("DELETE FROM invoice_payments WHERE payment_id = :id");
+                $stmt->execute(['id' => $delete_id]);
+
+                // Delete the main payment
+                $stmt = $pdo->prepare("DELETE FROM payments WHERE id = :id");
+                $stmt->execute(['id' => $delete_id]);
+
+                $pdo->commit();
+                $message = "Payment deleted successfully!";
+            } else {
+                $pdo->rollBack();
+            }
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $errors[] = "Error deleting payment: " . $e->getMessage();
+        }
+    }
 }
 
 
 // Fetch all payments for the current user, now including linked invoice numbers
-$sql = "SELECT 
-            p.*, 
+$sql = "SELECT
+            p.*,
             c.name AS customer_name,
             GROUP_CONCAT(i.invoice_number SEPARATOR ', ') as linked_invoices
-        FROM payments p 
+        FROM payments p
         JOIN customers c ON p.customer_id = c.id
         LEFT JOIN invoice_payments ip ON p.id = ip.payment_id
         LEFT JOIN invoices i ON ip.invoice_id = i.id
-        WHERE p.user_id = :user_id 
         GROUP BY p.id
         ORDER BY p.payment_date DESC";
 
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -78,7 +104,9 @@ require_once '../../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($payment['amount'], 2)); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $payment['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
-                                            <a href="index.php?action=delete&id=<?php echo $payment['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this payment? This will update the balance on all linked invoices.');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $payment['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this payment? This will update the balance on all linked invoices.');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

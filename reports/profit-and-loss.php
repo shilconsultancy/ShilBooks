@@ -18,29 +18,29 @@ $end_date = $_GET['end_date'] ?? date('Y-m-t');
 // --- Report Data Fetching within the Date Range ---
 
 // 1. Calculate Gross Revenue
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE user_id = ? AND status = 'paid' AND invoice_date BETWEEN ? AND ?");
-$paid_invoices_total_stmt->execute([$userId, $start_date, $end_date]);
+$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+$paid_invoices_total_stmt->execute([$start_date, $end_date]);
 $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
 
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE user_id = ? AND receipt_date BETWEEN ? AND ?");
-$receipts_total_stmt->execute([$userId, $start_date, $end_date]);
+$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
+$receipts_total_stmt->execute([$start_date, $end_date]);
 $grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
 
 // 2. Subtract all Credit Notes
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE user_id = ? AND credit_note_date BETWEEN ? AND ?");
-$credit_notes_stmt->execute([$userId, $start_date, $end_date]);
+$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+$credit_notes_stmt->execute([$start_date, $end_date]);
 $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
 $netRevenue = $grossRevenue - $totalCredits;
 
 // 3. Fetch Expenses grouped by category
-$expenses_sql = "SELECT ec.name as category_name, SUM(e.amount) as total_amount 
-                 FROM expenses e 
-                 JOIN expense_categories ec ON e.category_id = ec.id 
-                 WHERE e.user_id = ? AND e.expense_date BETWEEN ? AND ?
-                 GROUP BY e.category_id 
+$expenses_sql = "SELECT ec.name as category_name, SUM(e.amount) as total_amount
+                 FROM expenses e
+                 JOIN expense_categories ec ON e.category_id = ec.id
+                 WHERE e.expense_date BETWEEN ? AND ?
+                 GROUP BY e.category_id
                  ORDER BY ec.name ASC";
 $expenses_stmt = $pdo->prepare($expenses_sql);
-$expenses_stmt->execute([$userId, $start_date, $end_date]);
+$expenses_stmt->execute([$start_date, $end_date]);
 $expensesByCategory = $expenses_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 4. Calculate Total Expenses and Net Profit

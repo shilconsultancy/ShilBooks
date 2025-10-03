@@ -35,16 +35,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $old_items = $old_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
             foreach ($old_items as $item) {
-                $restore_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                $restore_sql = "UPDATE items SET quantity = quantity + :quantity WHERE id = :id AND item_type = 'product'";
                 $restore_stmt = $pdo->prepare($restore_sql);
-                $restore_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id'], 'user_id' => $userId]);
+                $restore_stmt->execute(['quantity' => $item['quantity'], 'id' => $item['item_id']]);
             }
 
             // 2. Update the main `invoices` table
-            $sql = "UPDATE invoices SET customer_id = :customer_id, invoice_date = :invoice_date, due_date = :due_date, 
-                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes 
-                    WHERE id = :id AND user_id = :user_id";
-            
+            $sql = "UPDATE invoices SET customer_id = :customer_id, invoice_date = :invoice_date, due_date = :due_date,
+                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes
+                    WHERE id = :id";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 'customer_id' => $_POST['customer_id'],
@@ -54,8 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'tax' => $_POST['tax'],
                 'total' => $_POST['total'],
                 'notes' => $_POST['notes'],
-                'id' => $invoice_id,
-                'user_id' => $userId
+                'id' => $invoice_id
             ]);
 
             // 3. Delete old line items
@@ -77,9 +76,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         'price' => $_POST['price'][$key],
                         'total' => $_POST['line_total'][$key]
                     ]);
-                    $deduct_sql = "UPDATE items SET quantity = quantity - :quantity WHERE id = :id AND item_type = 'product' AND user_id = :user_id";
+                    $deduct_sql = "UPDATE items SET quantity = quantity - :quantity WHERE id = :id AND item_type = 'product'";
                     $deduct_stmt = $pdo->prepare($deduct_sql);
-                    $deduct_stmt->execute(['quantity' => $quantity, 'id' => $itemId, 'user_id' => $userId]);
+                    $deduct_stmt->execute(['quantity' => $quantity, 'id' => $itemId]);
                 }
             }
 
@@ -96,9 +95,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 // --- Fetch existing data for the form ---
-$invoice_sql = "SELECT * FROM invoices WHERE id = :id AND user_id = :user_id";
+$invoice_sql = "SELECT * FROM invoices WHERE id = :id";
 $invoice_stmt = $pdo->prepare($invoice_sql);
-$invoice_stmt->execute(['id' => $invoice_id, 'user_id' => $userId]);
+$invoice_stmt->execute(['id' => $invoice_id]);
 $invoice = $invoice_stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$invoice) {
@@ -111,14 +110,14 @@ $invoice_items_stmt = $pdo->prepare($invoice_items_sql);
 $invoice_items_stmt->execute(['invoice_id' => $invoice_id]);
 $invoice_items = $invoice_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$customer_stmt = $pdo->prepare("SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC");
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt = $pdo->prepare("SELECT id, name FROM customers ORDER BY name ASC");
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
-$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC");
-$item_stmt->execute(['user_id' => $userId]);
+$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items ORDER BY name ASC");
+$item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
-$tax_stmt = $pdo->prepare("SELECT * FROM tax_rates WHERE user_id = :user_id ORDER BY is_default DESC, tax_name ASC");
-$tax_stmt->execute(['user_id' => $userId]);
+$tax_stmt = $pdo->prepare("SELECT * FROM tax_rates ORDER BY is_default DESC, tax_name ASC");
+$tax_stmt->execute();
 $tax_rates = $tax_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'Edit Invoice ' . htmlspecialchars($invoice['invoice_number']);

@@ -12,8 +12,8 @@ try {
     $generated_count = 0;
     
     // Find active recurring profiles that are due for an invoice
-    $sql = "SELECT * FROM recurring_invoices 
-            WHERE user_id IN (SELECT id FROM users) AND status = 'active' 
+    $sql = "SELECT * FROM recurring_invoices
+            WHERE status = 'active'
             AND start_date <= CURDATE() AND (end_date IS NULL OR end_date >= CURDATE())";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
@@ -37,17 +37,17 @@ try {
             // This profile is due, generate an invoice
             
             // Get new invoice number
-            $inv_count_stmt = $pdo->prepare("SELECT COUNT(*) FROM invoices WHERE user_id = ?");
-            $inv_count_stmt->execute([$profile['user_id']]);
+            $inv_count_stmt = $pdo->prepare("SELECT COUNT(*) FROM invoices");
+            $inv_count_stmt->execute();
             $invoice_number = 'INV-' . str_pad($inv_count_stmt->fetchColumn() + 1, 4, '0', STR_PAD_LEFT);
             
             $invoice_date = $today->format('Y-m-d');
             $due_date = (clone $today)->modify('+30 days')->format('Y-m-d');
 
             // Insert into invoices table
-            $inv_sql = "INSERT INTO invoices (user_id, customer_id, invoice_number, invoice_date, due_date, subtotal, tax, total, notes, status) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'sent')";
-            $pdo->prepare($inv_sql)->execute([$profile['user_id'], $profile['customer_id'], $invoice_number, $invoice_date, $due_date, $profile['subtotal'], $profile['tax'], $profile['total'], $profile['notes']]);
+            $inv_sql = "INSERT INTO invoices (customer_id, invoice_number, invoice_date, due_date, subtotal, tax, total, notes, status)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'sent')";
+            $pdo->prepare($inv_sql)->execute([$profile['customer_id'], $invoice_number, $invoice_date, $due_date, $profile['subtotal'], $profile['tax'], $profile['total'], $profile['notes']]);
             $invoice_id = $pdo->lastInsertId();
 
             // Copy items and update inventory

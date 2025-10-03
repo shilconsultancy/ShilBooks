@@ -23,9 +23,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
     $new_status = $_POST['new_status'];
     $allowed_statuses = ['draft', 'sent', 'paid', 'overdue'];
     if (in_array($new_status, $allowed_statuses)) {
-        $sql = "UPDATE invoices SET status = :status WHERE id = :id AND user_id = :user_id";
+        $sql = "UPDATE invoices SET status = :status WHERE id = :id";
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute(['status' => $new_status, 'id' => $invoice_id, 'user_id' => $userId])) {
+        if ($stmt->execute(['status' => $new_status, 'id' => $invoice_id])) {
             $message = "Status updated successfully!";
         } else {
             $message = "Error updating status.";
@@ -35,11 +35,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
 
 // Fetch invoice details
 $sql = "SELECT i.*, c.name as customer_name, c.email as customer_email, c.address as customer_address
-        FROM invoices i 
+        FROM invoices i
         JOIN customers c ON i.customer_id = c.id
-        WHERE i.id = :id AND i.user_id = :user_id";
+        WHERE i.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $invoice_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $invoice_id]);
 $invoice = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$invoice) {

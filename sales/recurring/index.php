@@ -13,38 +13,39 @@ $errors = [];
 
 // Handle Delete Action
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    $profile_id_to_delete = (int)$_GET['id'];
-    try {
-        $pdo->beginTransaction();
-        
-        $check_sql = "SELECT id FROM recurring_invoices WHERE id = :id AND user_id = :user_id";
-        $check_stmt = $pdo->prepare($check_sql);
-        $check_stmt->execute(['id' => $profile_id_to_delete, 'user_id' => $userId]);
-        
-        if ($check_stmt->fetch()) {
-            $stmt = $pdo->prepare("DELETE FROM recurring_invoice_items WHERE recurring_invoice_id = :id");
-            $stmt->execute(['id' => $profile_id_to_delete]);
-            
-            $stmt = $pdo->prepare("DELETE FROM recurring_invoices WHERE id = :id");
-            $stmt->execute(['id' => $profile_id_to_delete]);
-            
-            $pdo->commit();
-            $message = "Recurring profile deleted successfully!";
-        } else {
+    if (hasPermission('admin')) {
+        $profile_id_to_delete = (int)$_GET['id'];
+        try {
+            $pdo->beginTransaction();
+
+            $check_sql = "SELECT id FROM recurring_invoices WHERE id = :id";
+            $check_stmt = $pdo->prepare($check_sql);
+            $check_stmt->execute(['id' => $profile_id_to_delete]);
+
+            if ($check_stmt->fetch()) {
+                $stmt = $pdo->prepare("DELETE FROM recurring_invoice_items WHERE recurring_invoice_id = :id");
+                $stmt->execute(['id' => $profile_id_to_delete]);
+
+                $stmt = $pdo->prepare("DELETE FROM recurring_invoices WHERE id = :id");
+                $stmt->execute(['id' => $profile_id_to_delete]);
+
+                $pdo->commit();
+                $message = "Recurring profile deleted successfully!";
+            } else {
+                $pdo->rollBack();
+            }
+        } catch (Exception $e) {
             $pdo->rollBack();
+            $errors[] = "Error deleting profile: " . $e->getMessage();
         }
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        $errors[] = "Error deleting profile: " . $e->getMessage();
     }
 }
 
 // NOTE: The invoice generation logic has been moved to the /cron/generate_invoices.php script
 
 // Fetch all recurring profiles to display
-$sql = "SELECT r.*, c.name AS customer_name FROM recurring_invoices r JOIN customers c ON r.customer_id = c.id WHERE r.user_id = :user_id ORDER BY r.start_date DESC";
+$sql = "SELECT r.*, c.name AS customer_name FROM recurring_invoices r JOIN customers c ON r.customer_id = c.id ORDER BY r.start_date DESC";
 $stmt = $pdo->prepare($sql);
-$stmt->bindParam(':user_id', $userId, PDO::PARAM_INT);
 $stmt->execute();
 $profiles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -114,7 +115,9 @@ function getStatusBadgeClass($status) {
                                         <td class="px-6 py-4 text-sm"><span class="px-2 py-1 text-xs font-medium rounded-full <?php echo getStatusBadgeClass($profile['status']); ?>"><?php echo htmlspecialchars(ucfirst($profile['status'])); ?></span></td>
                                         <td class="px-6 py-4 text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $profile['id']; ?>" class="text-macblue-600 hover:text-macblue-900">View</a>
-                                            <a href="index.php?action=delete&id=<?php echo $profile['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this recurring profile?');">Delete</a>
+                                            <?php if (hasPermission('admin')): ?>
+                                                <a href="index.php?action=delete&id=<?php echo $profile['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure you want to delete this recurring profile?');">Delete</a>
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>
