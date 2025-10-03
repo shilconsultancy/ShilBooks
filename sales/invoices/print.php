@@ -16,11 +16,11 @@ if ($invoice_id == 0) {
 
 // Fetch invoice details
 $sql = "SELECT i.*, c.name as customer_name, c.address as customer_address
-        FROM invoices i 
+        FROM invoices i
         JOIN customers c ON i.customer_id = c.id
-        WHERE i.id = :id AND i.user_id = :user_id";
+        WHERE i.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $invoice_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $invoice_id]);
 $invoice = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$invoice) {
@@ -37,8 +37,8 @@ $items_stmt->execute(['invoice_id' => $invoice_id]);
 $invoice_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

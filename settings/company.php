@@ -14,7 +14,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $errors = [];
 $message = '';
 

@@ -35,9 +35,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // Check if email is already taken by another user
     if (empty($errors)) {
-        $sql = "SELECT id FROM users WHERE email = ? AND id != ?";
+        $sql = "SELECT id FROM users WHERE email = ?";
         $stmt = $pdo->prepare($sql);
-        $stmt->execute([$email, $edit_id ?: 0]);
+        $stmt->execute([$email]);
         if ($stmt->fetch()) {
             $errors[] = "This email address is already in use.";
         }
@@ -50,19 +50,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($edit_id) { // This is an UPDATE
             if (!empty($password)) {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $sql_query = "UPDATE users SET name = ?, email = ?, role = ?, password = ? WHERE id = ? AND parent_user_id = ?";
-                $params = [$name, $email, $role, $hashed_password, $edit_id, $userId];
+                $sql_query = "UPDATE users SET name = ?, email = ?, role = ?, password = ? WHERE id = ?";
+                $params = [$name, $email, $role, $hashed_password, $edit_id];
             } else {
-                $sql_query = "UPDATE users SET name = ?, email = ?, role = ? WHERE id = ? AND parent_user_id = ?";
-                $params = [$name, $email, $role, $edit_id, $userId];
+                $sql_query = "UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?";
+                $params = [$name, $email, $role, $edit_id];
             }
         } else { // This is an INSERT
             if (empty($password)) {
                 $errors[] = "Password is required for new users.";
             } else {
                 $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                $sql_query = "INSERT INTO users (parent_user_id, name, email, password, role) VALUES (?, ?, ?, ?, ?)";
-                $params = [$userId, $name, $email, $hashed_password, $role];
+                $sql_query = "INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)";
+                $params = [$name, $email, $hashed_password, $role];
             }
         }
         
@@ -82,9 +82,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
     $delete_id = (int)$_GET['id'];
     if ($delete_id != $userId) {
-        $sql = "DELETE FROM users WHERE id = ? AND parent_user_id = ?";
+        $sql = "DELETE FROM users WHERE id = ?";
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute([$delete_id, $userId])) {
+        if ($stmt->execute([$delete_id])) {
             header("location: users.php?message=deleted");
             exit;
         }
@@ -97,10 +97,10 @@ if(isset($_GET['message'])) {
 }
 
 
-// Fetch all users associated with the logged-in admin's account
-$sql = "SELECT id, name, email, role, created_at FROM users WHERE (id = :user_id AND parent_user_id IS NULL) OR parent_user_id = :user_id ORDER BY created_at ASC";
+// Fetch all users
+$sql = "SELECT id, name, email, role, created_at FROM users ORDER BY created_at ASC";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['user_id' => $userId]);
+$stmt->execute();
 $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 $pageTitle = 'User Management';

@@ -16,9 +16,9 @@ if ($payment_id == 0) {
 }
 
 // Fetch payment details
-$sql = "SELECT p.*, c.name as customer_name FROM payments p JOIN customers c ON p.customer_id = c.id WHERE p.id = :id AND p.user_id = :user_id";
+$sql = "SELECT p.*, c.name as customer_name FROM payments p JOIN customers c ON p.customer_id = c.id WHERE p.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $payment_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $payment_id]);
 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$payment) {

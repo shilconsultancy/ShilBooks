@@ -11,13 +11,13 @@ $expense_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($expense_id == 0) { header("location: index.php"); exit; }
 
 // Fetch expense details
-$sql = "SELECT e.*, ec.name as category_name, v.name as vendor_name 
+$sql = "SELECT e.*, ec.name as category_name, v.name as vendor_name
         FROM expenses e
         JOIN expense_categories ec ON e.category_id = ec.id
         LEFT JOIN vendors v ON e.vendor_id = v.id
-        WHERE e.id = :id AND e.user_id = :user_id";
+        WHERE e.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $expense_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $expense_id]);
 $expense = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$expense) { header("location: index.php"); exit; }

@@ -39,8 +39,8 @@ $items_stmt->execute(['receipt_id' => $receipt_id]);
 $receipt_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

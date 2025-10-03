@@ -15,16 +15,16 @@ $sql = "SELECT cn.*, c.name as customer_name, c.address as customer_address, i.i
         FROM credit_notes cn 
         JOIN customers c ON cn.customer_id = c.id 
         JOIN invoices i ON cn.invoice_id = i.id 
-        WHERE cn.id = :id AND cn.user_id = :user_id";
+        WHERE cn.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $cn_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $cn_id]);
 $credit_note = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$credit_note) { header("location: index.php"); exit; }
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

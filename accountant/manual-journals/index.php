@@ -7,8 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-
 // Fetch all journal entries for the current user
 $sql = "SELECT je.*, SUM(j_item.amount) as total_amount
         FROM journal_entries je

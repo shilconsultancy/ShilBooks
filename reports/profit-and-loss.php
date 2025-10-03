@@ -7,8 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-
 // --- Handle Date Range ---
 // Default to the current month if no dates are provided
 $start_date = $_GET['start_date'] ?? date('Y-m-01');

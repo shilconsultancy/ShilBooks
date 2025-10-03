@@ -20,18 +20,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
     $new_status = $_POST['new_status'];
     $allowed_statuses = ['active', 'paused', 'finished'];
     if (in_array($new_status, $allowed_statuses)) {
-        $sql = "UPDATE recurring_invoices SET status = :status WHERE id = :id AND user_id = :user_id";
+        $sql = "UPDATE recurring_invoices SET status = :status WHERE id = :id";
         $stmt = $pdo->prepare($sql);
-        if ($stmt->execute(['status' => $new_status, 'id' => $profile_id, 'user_id' => $userId])) {
+        if ($stmt->execute(['status' => $new_status, 'id' => $profile_id])) {
             $message = "Status updated successfully!";
         }
     }
 }
 
 // Fetch profile details
-$sql = "SELECT r.*, c.name as customer_name FROM recurring_invoices r JOIN customers c ON r.customer_id = c.id WHERE r.id = :id AND r.user_id = :user_id";
+$sql = "SELECT r.*, c.name as customer_name FROM recurring_invoices r JOIN customers c ON r.customer_id = c.id WHERE r.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $profile_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $profile_id]);
 $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$profile) { header("location: index.php"); exit; }

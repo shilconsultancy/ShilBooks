@@ -11,9 +11,9 @@ $cn_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($cn_id == 0) { header("location: index.php"); exit; }
 
 // Fetch details
-$sql = "SELECT cn.*, c.name as customer_name, i.invoice_number FROM credit_notes cn JOIN customers c ON cn.customer_id = c.id JOIN invoices i ON cn.invoice_id = i.id WHERE cn.id = :id AND cn.user_id = :user_id";
+$sql = "SELECT cn.*, c.name as customer_name, i.invoice_number FROM credit_notes cn JOIN customers c ON cn.customer_id = c.id JOIN invoices i ON cn.invoice_id = i.id WHERE cn.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $cn_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $cn_id]);
 $credit_note = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$credit_note) { header("location: index.php"); exit; }

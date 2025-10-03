@@ -27,10 +27,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
 
             // 1. Update the main `quotes` table
-            $sql = "UPDATE quotes SET customer_id = :customer_id, quote_date = :quote_date, expiry_date = :expiry_date, 
-                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes 
-                    WHERE id = :id AND user_id = :user_id";
-            
+            $sql = "UPDATE quotes SET customer_id = :customer_id, quote_date = :quote_date, expiry_date = :expiry_date,
+                    subtotal = :subtotal, tax = :tax, total = :total, notes = :notes
+                    WHERE id = :id";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 'customer_id' => $_POST['customer_id'],
@@ -40,8 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'tax' => $_POST['tax'],
                 'total' => $_POST['total'],
                 'notes' => $_POST['notes'],
-                'id' => $quote_id,
-                'user_id' => $userId
+                'id' => $quote_id
             ]);
 
             // 2. Delete old line items
@@ -78,9 +77,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 // --- Fetch existing data for the form ---
-$quote_sql = "SELECT * FROM quotes WHERE id = :id AND user_id = :user_id";
+$quote_sql = "SELECT * FROM quotes WHERE id = :id";
 $quote_stmt = $pdo->prepare($quote_sql);
-$quote_stmt->execute(['id' => $quote_id, 'user_id' => $userId]);
+$quote_stmt->execute(['id' => $quote_id]);
 $quote = $quote_stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$quote) {
@@ -94,11 +93,11 @@ $quote_items_stmt->execute(['quote_id' => $quote_id]);
 $quote_items = $quote_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Customers & Items for dropdowns
-$customer_stmt = $pdo->prepare("SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC");
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt = $pdo->prepare("SELECT id, name FROM customers ORDER BY name ASC");
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
-$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC");
-$item_stmt->execute(['user_id' => $userId]);
+$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items ORDER BY name ASC");
+$item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

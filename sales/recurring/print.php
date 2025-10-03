@@ -18,9 +18,9 @@ if ($profile_id == 0) {
 $sql = "SELECT r.*, c.name as customer_name, c.address as customer_address 
         FROM recurring_invoices r 
         JOIN customers c ON r.customer_id = c.id 
-        WHERE r.id = :id AND r.user_id = :user_id";
+        WHERE r.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $profile_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $profile_id]);
 $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$profile) {
@@ -37,8 +37,8 @@ $items_stmt->execute(['id' => $profile_id]);
 $profile_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 

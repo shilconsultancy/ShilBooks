@@ -32,10 +32,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $pdo->beginTransaction();
 
             // 1. Update the main recurring_invoices table
-            $sql = "UPDATE recurring_invoices SET customer_id = :customer_id, start_date = :start_date, end_date = :end_date, 
-                    frequency = :frequency, status = :status, subtotal = :subtotal, tax = :tax, total = :total, notes = :notes 
-                    WHERE id = :id AND user_id = :user_id";
-            
+            $sql = "UPDATE recurring_invoices SET customer_id = :customer_id, start_date = :start_date, end_date = :end_date,
+                    frequency = :frequency, status = :status, subtotal = :subtotal, tax = :tax, total = :total, notes = :notes
+                    WHERE id = :id";
+
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 'customer_id' => $_POST['customer_id'],
@@ -47,8 +47,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'tax' => $_POST['tax'],
                 'total' => $_POST['total'],
                 'notes' => $_POST['notes'],
-                'id' => $profile_id,
-                'user_id' => $userId
+                'id' => $profile_id
             ]);
 
             // 2. Delete old line items
@@ -85,9 +84,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 
 // --- Fetch existing data for the form ---
-$profile_sql = "SELECT * FROM recurring_invoices WHERE id = :id AND user_id = :user_id";
+$profile_sql = "SELECT * FROM recurring_invoices WHERE id = :id";
 $profile_stmt = $pdo->prepare($profile_sql);
-$profile_stmt->execute(['id' => $profile_id, 'user_id' => $userId]);
+$profile_stmt->execute(['id' => $profile_id]);
 $profile = $profile_stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$profile) {
@@ -101,11 +100,11 @@ $profile_items_stmt->execute(['id' => $profile_id]);
 $profile_items = $profile_items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch Customers & Items for dropdowns
-$customer_stmt = $pdo->prepare("SELECT id, name FROM customers WHERE user_id = :user_id ORDER BY name ASC");
-$customer_stmt->execute(['user_id' => $userId]);
+$customer_stmt = $pdo->prepare("SELECT id, name FROM customers ORDER BY name ASC");
+$customer_stmt->execute();
 $customers = $customer_stmt->fetchAll(PDO::FETCH_ASSOC);
-$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items WHERE user_id = :user_id ORDER BY name ASC");
-$item_stmt->execute(['user_id' => $userId]);
+$item_stmt = $pdo->prepare("SELECT id, name, description, sale_price FROM items ORDER BY name ASC");
+$item_stmt->execute();
 $items = $item_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 

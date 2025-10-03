@@ -7,8 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-
 // --- Handle Date Filter ---
 // Default to today if no date is provided
 $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');

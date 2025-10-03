@@ -15,12 +15,12 @@ if ($payment_id == 0) {
 }
 
 // Fetch payment details
-$sql = "SELECT p.*, c.name as customer_name, c.address as customer_address 
-        FROM payments p 
-        JOIN customers c ON p.customer_id = c.id 
-        WHERE p.id = :id AND p.user_id = :user_id";
+$sql = "SELECT p.*, c.name as customer_name, c.address as customer_address
+        FROM payments p
+        JOIN customers c ON p.customer_id = c.id
+        WHERE p.id = :id";
 $stmt = $pdo->prepare($sql);
-$stmt->execute(['id' => $payment_id, 'user_id' => $userId]);
+$stmt->execute(['id' => $payment_id]);
 $payment = $stmt->fetch(PDO::FETCH_ASSOC);
 
 if (!$payment) {
@@ -37,8 +37,8 @@ $invoices_stmt->execute(['payment_id' => $payment_id]);
 $linked_invoices = $invoices_stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE user_id = ? AND setting_key LIKE 'company_%'");
-$settings_stmt->execute([$userId]);
+$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+$settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
 
