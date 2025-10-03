@@ -9,14 +9,13 @@ $is_sales_section = (strpos($currentUri, '/sales/') !== false);
 $is_customers_page = (strpos($currentUri, '/sales/customers/') !== false);
 $is_quotes_page = (strpos($currentUri, '/sales/quotes/') !== false);
 $is_invoices_page = (strpos($currentUri, '/sales/invoices/') !== false);
-$is_receipts_page = (strpos($currentUri, '/sales/receipts/') !== false);
-$is_recurring_page = (strpos($currentUri, '/sales/recurring/') !== false);
 $is_payments_page = (strpos($currentUri, '/sales/payments/') !== false);
 $is_credit_notes_page = (strpos($currentUri, '/sales/credit-notes/') !== false);
 $is_purchases_section = (strpos($currentUri, '/purchases/') !== false);
 $is_vendors_page = (strpos($currentUri, '/purchases/vendors/') !== false);
 $is_categories_page = (strpos($currentUri, '/purchases/categories/') !== false);
 $is_expenses_page = (strpos($currentUri, '/purchases/expenses/') !== false);
+$is_recurring_expenses_page = (strpos($currentUri, '/purchases/recurring/') !== false);
 $is_banking_page = (strpos($currentUri, '/banking/') !== false);
 $is_accountant_section = (strpos($currentUri, '/accountant/') !== false);
 $is_coa_page = (strpos($currentUri, '/accountant/chart-of-accounts/') !== false);
@@ -69,8 +68,6 @@ $is_settings_page = (strpos($currentUri, '/settings/') !== false);
                         <li><a href="<?php echo BASE_PATH; ?>sales/customers/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_customers_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Customers</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>sales/quotes/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_quotes_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Quotes</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>sales/invoices/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_invoices_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Invoices</a></li>
-                        <li><a href="<?php echo BASE_PATH; ?>sales/receipts/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_receipts_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Sales Receipts</a></li>
-                        <li><a href="<?php echo BASE_PATH; ?>sales/recurring/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_recurring_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Recurring Invoices</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>sales/payments/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_payments_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Payments Received</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>sales/credit-notes/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_credit_notes_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Credit Notes</a></li>
                     </ul>
@@ -82,6 +79,7 @@ $is_settings_page = (strpos($currentUri, '/settings/') !== false);
                         <li><a href="<?php echo BASE_PATH; ?>purchases/vendors/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_vendors_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Vendors</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>purchases/categories/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_categories_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Expense Categories</a></li>
                         <li><a href="<?php echo BASE_PATH; ?>purchases/expenses/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_expenses_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Expenses</a></li>
+                        <li><a href="<?php echo BASE_PATH; ?>purchases/recurring/" class="sidebar-subitem block px-3 py-2 rounded-md text-sm <?php echo $is_recurring_expenses_page ? 'text-white bg-macgray-700' : 'text-macgray-300 hover:text-white'; ?>">Recurring Expenses</a></li>
                     </ul>
                 </li>
 

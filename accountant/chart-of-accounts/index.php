@@ -56,7 +56,7 @@ if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id']))
     }
 }
 
-// Fetch all accounts for the user
+// Fetch all accounts
 $sql = "SELECT * FROM chart_of_accounts ORDER BY account_type, account_name ASC";
 $stmt = $pdo->prepare($sql);
 $stmt->execute();

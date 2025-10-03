@@ -7,7 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $errors = [];
 
 // --- Fetch data for form dropdowns ---
@@ -29,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $amount = $_POST['amount'];
     $category_id = $_POST['category_id'];
     $vendor_id = !empty($_POST['vendor_id']) ? $_POST['vendor_id'] : null;
-    $description = trim($_POST['description']); // New description field
+    $description = trim($_POST['description']);
     $notes = trim($_POST['notes']);
     $edit_id = isset($_POST['edit_id']) ? (int)$_POST['edit_id'] : null;
 
@@ -42,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $sql = "UPDATE expenses SET expense_date = ?, amount = ?, category_id = ?, vendor_id = ?, description = ?, notes = ? WHERE id = ?";
             $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes, $edit_id];
         } else {
-            $sql = "INSERT INTO expenses (expense_date, amount, category_id, vendor_id, description, notes) VALUES (?, ?, ?, ?, ?, ?)";
+            $sql = "INSERT INTO expenses (expense_date, amount, category_id, vendor_id, description, notes, status, amount_paid) VALUES (?, ?, ?, ?, ?, ?, 'unpaid', 0)";
             $params = [$expense_date, $amount, $category_id, $vendor_id, $description, $notes];
         }
         $stmt = $pdo->prepare($sql);
@@ -81,6 +80,15 @@ $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 $pageTitle = 'Manage Expenses';
 require_once '../../partials/header.php';
 require_once '../../partials/sidebar.php';
+
+function getStatusBadgeClass($status) {
+    switch ($status) {
+        case 'paid': return 'bg-green-100 text-green-800';
+        case 'partially_paid': return 'bg-yellow-100 text-yellow-800';
+        case 'unpaid':
+        default: return 'bg-red-100 text-red-800';
+    }
+}
 ?>
 
 <div class="flex-1 flex flex-col overflow-hidden">
@@ -102,12 +110,13 @@ require_once '../../partials/sidebar.php';
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Description</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Category</th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Amount</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-macgray-500 uppercase">Status</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-macgray-500 uppercase">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-macgray-200">
                             <?php if (empty($expenses)): ?>
-                                <tr><td colspan="5" class="px-6 py-4 text-center text-macgray-500">No expenses recorded.</td></tr>
+                                <tr><td colspan="6" class="px-6 py-4 text-center text-macgray-500">No expenses recorded.</td></tr>
                             <?php else: ?>
                                 <?php foreach ($expenses as $expense): ?>
                                     <tr>
@@ -115,6 +124,11 @@ require_once '../../partials/sidebar.php';
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo htmlspecialchars($expense['description']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars($expense['category_name']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($expense['amount'], 2)); ?></td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full <?php echo getStatusBadgeClass($expense['status']); ?>">
+                                                <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $expense['status']))); ?>
+                                            </span>
+                                        </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <a href="view.php?id=<?php echo $expense['id']; ?>" class="text-green-600 hover:text-green-900">View</a>
                                             <button class="editBtn text-macblue-600 hover:text-macblue-900 ml-4" 
