@@ -9,10 +9,60 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 
 $invoice_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $message = '';
+$errors = [];
 
 if ($invoice_id == 0) {
     header("location: index.php");
     exit;
+}
+
+// Handle Record Payment Submission
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['record_payment'])) {
+    validate_csrf_token();
+    $payment_amount = (float)$_POST['payment_amount'];
+    $payment_date = $_POST['payment_date'];
+    $payment_method = $_POST['payment_method'];
+    $payment_notes = trim($_POST['payment_notes']);
+    
+    // Fetch current invoice data to validate payment amount
+    $stmt = $pdo->prepare("SELECT total, amount_paid FROM invoices WHERE id = ?");
+    $stmt->execute([$invoice_id]);
+    $invoice_data = $stmt->fetch(PDO::FETCH_ASSOC);
+    $balance_due = $invoice_data['total'] - $invoice_data['amount_paid'];
+
+    if ($payment_amount <= 0 || $payment_amount > $balance_due) {
+        $errors[] = "Invalid payment amount. Must be between 0.01 and " . $balance_due;
+    }
+
+    if (empty($errors)) {
+        try {
+            $pdo->beginTransaction();
+
+            // 1. Insert into payments table (user_id removed)
+            $sql = "INSERT INTO payments (customer_id, payment_date, amount, payment_method, notes) VALUES (?, ?, ?, ?, ?)";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([$_POST['customer_id'], $payment_date, $payment_amount, $payment_method, $payment_notes]);
+            $payment_id = $pdo->lastInsertId();
+
+            // 2. Link payment to this invoice
+            $sql_link = "INSERT INTO invoice_payments (payment_id, invoice_id, amount_applied) VALUES (?, ?, ?)";
+            $pdo->prepare($sql_link)->execute([$payment_id, $invoice_id, $payment_amount]);
+
+            // 3. Update the invoice's amount_paid
+            $sql_update = "UPDATE invoices SET amount_paid = amount_paid + ? WHERE id = ?";
+            $pdo->prepare($sql_update)->execute([$payment_amount, $invoice_id]);
+            
+            // 4. Update invoice status if it's now fully paid
+            $sql_status = "UPDATE invoices SET status = 'paid' WHERE id = ? AND total <= amount_paid";
+            $pdo->prepare($sql_status)->execute([$invoice_id]);
+            
+            $pdo->commit();
+            $message = "Payment of " . CURRENCY_SYMBOL . number_format($payment_amount, 2) . " recorded successfully!";
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            $errors[] = "Error recording payment: " . $e->getMessage();
+        }
+    }
 }
 
 // Handle Status Update
@@ -27,7 +77,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['change_status'])) {
         if ($stmt->execute(['status' => $new_status, 'id' => $invoice_id])) {
             $message = "Status updated successfully!";
         } else {
-            $message = "Error updating status.";
+            $errors[] = "Error updating status.";
         }
     }
 }
@@ -45,6 +95,7 @@ if (!$invoice) {
     header("location: index.php");
     exit;
 }
+$balance_due = $invoice['total'] - $invoice['amount_paid'];
 
 // Fetch invoice items
 $items_sql = "SELECT ii.*, i.name as item_name 
@@ -61,6 +112,8 @@ $settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
 $s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
+$payment_methods = ['Bank Transfer', 'Cash', 'Credit Card', 'Check', 'Mobile Banking', 'Online Payment Gateway'];
+
 
 $pageTitle = 'View Invoice ' . htmlspecialchars($invoice['invoice_number']);
 require_once '../../partials/header.php';
@@ -72,6 +125,11 @@ require_once '../../partials/sidebar.php';
         <h1 class="text-xl font-semibold text-macgray-800">Invoice: <?php echo htmlspecialchars($invoice['invoice_number']); ?></h1>
         <div class="flex items-center space-x-2">
             <a href="<?php echo BASE_PATH; ?>sales/invoices/" class="text-sm text-macblue-600 hover:text-macblue-800">&larr; Back to All Invoices</a>
+            <?php if($balance_due > 0): ?>
+            <button id="recordPaymentBtn" class="px-3 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 flex items-center space-x-2 text-sm">
+                <i data-feather="dollar-sign" class="w-4 h-4"></i><span>Record Payment</span>
+            </button>
+            <?php endif; ?>
             <a href="edit.php?id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm"><i data-feather="edit-2" class="w-4 h-4"></i><span>Edit</span></a>
             <a href="print.php?id=<?php echo $invoice_id; ?>" target="_blank" class="px-3 py-2 bg-macgray-200 text-macgray-800 rounded-md hover:bg-macgray-300 flex items-center space-x-2 text-sm"><i data-feather="printer" class="w-4 h-4"></i><span>Print</span></a>
             <a href="<?php echo BASE_PATH; ?>sales/credit-notes/create.php?from_invoice_id=<?php echo $invoice_id; ?>" class="px-3 py-2 bg-macblue-500 text-white rounded-md hover:bg-macblue-600 flex items-center space-x-2 text-sm"><i data-feather="file-minus" class="w-4 h-4"></i><span>Create Credit Note</span></a>
@@ -80,11 +138,8 @@ require_once '../../partials/sidebar.php';
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-4xl mx-auto">
-            <?php if ($message): ?>
-            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline"><?php echo htmlspecialchars($message); ?></span>
-            </div>
-            <?php endif; ?>
+            <?php if ($message): ?><div class="bg-green-100 border-green-400 text-green-700 px-4 py-3 rounded mb-4"><?php echo htmlspecialchars($message); ?></div><?php endif; ?>
+            <?php if (!empty($errors)): ?><div class="bg-red-100 border-red-400 text-red-700 px-4 py-3 rounded mb-4"><?php foreach($errors as $e) echo '<span>'.$e.'</span><br>'; ?></div><?php endif; ?>
 
             <div class="bg-white p-4 rounded-xl shadow-sm border border-macgray-200 mb-6 flex items-center space-x-2">
                 <span class="text-sm font-medium text-gray-700 mr-4">Status: <strong class="uppercase"><?php echo htmlspecialchars($invoice['status']); ?></strong></span>
@@ -159,7 +214,7 @@ require_once '../../partials/sidebar.php';
                             <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Tax</span><span class="text-sm text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['tax'], 2)); ?></span></div>
                             <div class="flex justify-between pt-2 border-t"><span class="font-bold text-macgray-900">Total</span><span class="font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['total'], 2)); ?></span></div>
                             <div class="flex justify-between"><span class="text-sm font-medium text-macgray-500">Amount Paid</span><span class="text-sm text-macgray-800">- <?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['amount_paid'], 2)); ?></span></div>
-                            <div class="flex justify-between mt-2 pt-2 border-t bg-macgray-50 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Balance Due</span><span class="text-base font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($invoice['total'] - $invoice['amount_paid'], 2)); ?></span></div>
+                            <div class="flex justify-between mt-2 pt-2 border-t bg-macgray-50 p-2 rounded-md"><span class="text-base font-bold text-macgray-900">Balance Due</span><span class="text-base font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo htmlspecialchars(number_format($balance_due, 2)); ?></span></div>
                         </div>
                     </div>
                 </div>
@@ -167,6 +222,65 @@ require_once '../../partials/sidebar.php';
         </div>
     </main>
 </div>
+
+<div id="paymentModal" class="fixed z-50 inset-0 overflow-y-auto hidden">
+    <div class="flex items-center justify-center min-h-screen">
+        <div class="fixed inset-0 transition-opacity" aria-hidden="true"><div class="absolute inset-0 bg-gray-500 opacity-75"></div></div>
+        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+            <form action="view.php?id=<?php echo $invoice_id; ?>" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($_SESSION['csrf_token']); ?>">
+                <input type="hidden" name="customer_id" value="<?php echo $invoice['customer_id']; ?>">
+                <input type="hidden" name="record_payment" value="1">
+                <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Record Payment for #<?php echo htmlspecialchars($invoice['invoice_number']); ?></h3>
+                    <div class="mt-4 space-y-4">
+                        <div>
+                            <label for="payment_amount" class="block text-sm font-medium text-gray-700">Amount*</label>
+                            <input type="number" name="payment_amount" id="payment_amount" value="<?php echo number_format($balance_due, 2, '.', ''); ?>" max="<?php echo number_format($balance_due, 2, '.', ''); ?>" step="0.01" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label for="payment_date" class="block text-sm font-medium text-gray-700">Payment Date*</label>
+                                <input type="date" name="payment_date" id="payment_date" value="<?php echo date('Y-m-d'); ?>" required class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label for="payment_method" class="block text-sm font-medium text-gray-700">Payment Method</label>
+                                <select name="payment_method" id="payment_method" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md">
+                                     <?php foreach ($payment_methods as $method): ?>
+                                    <option value="<?php echo htmlspecialchars($method); ?>"><?php echo htmlspecialchars($method); ?></option>
+                                <?php endforeach; ?>
+                                </select>
+                            </div>
+                        </div>
+                         <div>
+                            <label for="payment_notes" class="block text-sm font-medium text-gray-700">Notes (Optional)</label>
+                            <textarea name="payment_notes" id="payment_notes" rows="2" class="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-macblue-600 font-medium text-white hover:bg-macblue-700 sm:ml-3 sm:w-auto sm:text-sm">Save Payment</button>
+                    <button type="button" id="closeModalBtn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:w-auto sm:text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const modal = document.getElementById('paymentModal');
+    const recordPaymentBtn = document.getElementById('recordPaymentBtn');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+
+    if (recordPaymentBtn) {
+        recordPaymentBtn.addEventListener('click', () => modal.classList.remove('hidden'));
+    }
+    if(closeModalBtn) {
+        closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+});
+</script>
 
 <?php
 require_once '../../partials/footer.php';

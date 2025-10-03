@@ -7,7 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $customer_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($customer_id == 0) {
@@ -17,8 +16,8 @@ if ($customer_id == 0) {
 
 // Fetch customer details
 try {
-    $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? AND user_id = ?");
-    $stmt->execute([$customer_id, $userId]);
+    $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ?");
+    $stmt->execute([$customer_id]);
     $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$customer) {
@@ -37,8 +36,8 @@ $transactions = [];
 
 try {
     // Invoices
-    $inv_stmt = $pdo->prepare("SELECT id, invoice_number as number, invoice_date as date, total, 'invoice' as type FROM invoices WHERE customer_id = ? AND user_id = ?");
-    $inv_stmt->execute([$customer_id, $userId]);
+    $inv_stmt = $pdo->prepare("SELECT id, invoice_number as number, invoice_date as date, total, 'invoice' as type FROM invoices WHERE customer_id = ?");
+    $inv_stmt->execute([$customer_id]);
     while ($row = $inv_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
     // Payments (Updated Query)
@@ -51,15 +50,15 @@ try {
                 FROM payments p
                 LEFT JOIN invoice_payments ip ON p.id = ip.payment_id
                 LEFT JOIN invoices i ON ip.invoice_id = i.id
-                WHERE p.customer_id = ? AND p.user_id = ?
+                WHERE p.customer_id = ?
                 GROUP BY p.id";
     $pay_stmt = $pdo->prepare($pay_sql);
-    $pay_stmt->execute([$customer_id, $userId]);
+    $pay_stmt->execute([$customer_id]);
     while ($row = $pay_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
     // Sales Receipts
-    $rcpt_stmt = $pdo->prepare("SELECT id, receipt_number as number, receipt_date as date, total, 'receipt' as type FROM sales_receipts WHERE customer_id = ? AND user_id = ?");
-    $rcpt_stmt->execute([$customer_id, $userId]);
+    $rcpt_stmt = $pdo->prepare("SELECT id, receipt_number as number, receipt_date as date, total, 'receipt' as type FROM sales_receipts WHERE customer_id = ?");
+    $rcpt_stmt->execute([$customer_id]);
     while ($row = $rcpt_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
     // Credit Notes (Updated Query)
@@ -72,9 +71,9 @@ try {
                 i.invoice_number as reference_invoice
             FROM credit_notes cn
             LEFT JOIN invoices i ON cn.invoice_id = i.id
-            WHERE cn.customer_id = ? AND cn.user_id = ?";
+            WHERE cn.customer_id = ?";
     $cn_stmt = $pdo->prepare($cn_sql);
-    $cn_stmt->execute([$customer_id, $userId]);
+    $cn_stmt->execute([$customer_id]);
     while ($row = $cn_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 } catch (Exception $e) {
     // Log error but don't fail completely - just show no transactions
@@ -165,12 +164,14 @@ function getTransactionTypeDetails($type) {
                                     <tr>
                                         <td class="px-6 py-4 text-sm text-macgray-500"><?php echo htmlspecialchars(date("M d, Y", strtotime($tx['date']))); ?></td>
                                         <td class="px-6 py-4 text-sm">
-                                            <a href="<?php echo $details['url']; ?>?id=<?php echo $tx['id']; ?>" class="px-2 py-1 text-xs font-medium rounded-full <?php echo $details['color']; ?> hover:opacity-80">
+                                            <span class="px-2 py-1 text-xs font-medium rounded-full <?php echo $details['color']; ?>">
                                                 <?php echo $details['label']; ?>
-                                            </a>
+                                            </span>
                                         </td>
-                                        <td class="px-6 py-4 text-sm font-medium text-macgray-900">
-                                            <?php echo htmlspecialchars($tx['number'] ?? ''); ?>
+                                        <td class="px-6 py-4 text-sm font-medium text-macblue-600 hover:text-macblue-800">
+                                            <a href="<?php echo $details['url']; ?>?id=<?php echo $tx['id']; ?>">
+                                                <?php echo htmlspecialchars($tx['number'] ?? ''); ?>
+                                            </a>
                                             <?php if ($tx['type'] == 'credit_note' && isset($tx['reference_invoice'])): ?>
                                                 <span class="block text-xs text-macgray-500">Ref: <?php echo htmlspecialchars($tx['reference_invoice']); ?></span>
                                             <?php endif; ?>
