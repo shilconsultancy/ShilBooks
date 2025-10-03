@@ -7,7 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $quote_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $message = '';
 

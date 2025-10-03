@@ -15,7 +15,6 @@ if (!isset($_GET['customer_id']) || empty($_GET['customer_id'])) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $customerId = (int)$_GET['customer_id'];
 
 try {

@@ -7,7 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit("Unauthorized access.");
 }
 
-$userId = $_SESSION['user_id'];
 $doc_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 
 if ($doc_id > 0) {

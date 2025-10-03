@@ -7,7 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $invoice_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $message = '';
 
@@ -60,7 +59,7 @@ $invoice_items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 $settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
 $settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+$s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 
 $pageTitle = 'View Invoice ' . htmlspecialchars($invoice['invoice_number']);

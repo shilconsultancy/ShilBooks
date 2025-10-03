@@ -6,7 +6,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php"); exit;
 }
 
-$userId = $_SESSION['user_id'];
 $message = '';
 $errors = [];
 

@@ -6,7 +6,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php"); exit;
 }
 
-$userId = $_SESSION['user_id'];
 $cn_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($cn_id == 0) { header("location: index.php"); exit; }
 

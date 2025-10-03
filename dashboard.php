@@ -90,7 +90,7 @@ $expenses_stmt->execute();
 while($row = $expenses_stmt->fetch(PDO::FETCH_ASSOC)) {
     $activity[] = ['type' => 'expense', 'data' => $row, 'date' => new DateTime($row['date'])];
 }
-usort($activity, fn($a, $b) => $b['date'] <=> $a['date']);
+usort($activity, function($a, $b) { return $b['date'] <=> $a['date']; });
 $recentActivities = array_slice($activity, 0, 5);
 
 $pageTitle = 'Dashboard';

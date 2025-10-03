@@ -16,11 +16,18 @@ if ($customer_id == 0) {
 }
 
 // Fetch customer details
-$stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? AND user_id = ?");
-$stmt->execute([$customer_id, $userId]);
-$customer = $stmt->fetch(PDO::FETCH_ASSOC);
+try {
+    $stmt = $pdo->prepare("SELECT * FROM customers WHERE id = ? AND user_id = ?");
+    $stmt->execute([$customer_id, $userId]);
+    $customer = $stmt->fetch(PDO::FETCH_ASSOC);
 
-if (!$customer) {
+    if (!$customer) {
+        header("location: index.php");
+        exit;
+    }
+} catch (Exception $e) {
+    // Log the error and redirect
+    error_log("Error fetching customer {$customer_id}: " . $e->getMessage());
     header("location: index.php");
     exit;
 }
@@ -28,46 +35,52 @@ if (!$customer) {
 // --- Fetch all transactions for this customer ---
 $transactions = [];
 
-// Invoices
-$inv_stmt = $pdo->prepare("SELECT id, invoice_number as number, invoice_date as date, total, 'invoice' as type FROM invoices WHERE customer_id = ? AND user_id = ?");
-$inv_stmt->execute([$customer_id, $userId]);
-while ($row = $inv_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
+try {
+    // Invoices
+    $inv_stmt = $pdo->prepare("SELECT id, invoice_number as number, invoice_date as date, total, 'invoice' as type FROM invoices WHERE customer_id = ? AND user_id = ?");
+    $inv_stmt->execute([$customer_id, $userId]);
+    while ($row = $inv_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
-// Payments (Updated Query)
-$pay_sql = "SELECT 
-                p.id, 
-                p.payment_date as date, 
-                p.amount as total, 
-                'payment' as type,
-                GROUP_CONCAT(i.invoice_number SEPARATOR ', ') as number
-            FROM payments p
-            LEFT JOIN invoice_payments ip ON p.id = ip.payment_id
-            LEFT JOIN invoices i ON ip.invoice_id = i.id
-            WHERE p.customer_id = ? AND p.user_id = ?
-            GROUP BY p.id";
-$pay_stmt = $pdo->prepare($pay_sql);
-$pay_stmt->execute([$customer_id, $userId]);
-while ($row = $pay_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
+    // Payments (Updated Query)
+    $pay_sql = "SELECT
+                    p.id,
+                    p.payment_date as date,
+                    p.amount as total,
+                    'payment' as type,
+                    GROUP_CONCAT(i.invoice_number SEPARATOR ', ') as number
+                FROM payments p
+                LEFT JOIN invoice_payments ip ON p.id = ip.payment_id
+                LEFT JOIN invoices i ON ip.invoice_id = i.id
+                WHERE p.customer_id = ? AND p.user_id = ?
+                GROUP BY p.id";
+    $pay_stmt = $pdo->prepare($pay_sql);
+    $pay_stmt->execute([$customer_id, $userId]);
+    while ($row = $pay_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
-// Sales Receipts
-$rcpt_stmt = $pdo->prepare("SELECT id, receipt_number as number, receipt_date as date, total, 'receipt' as type FROM sales_receipts WHERE customer_id = ? AND user_id = ?");
-$rcpt_stmt->execute([$customer_id, $userId]);
-while ($row = $rcpt_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
+    // Sales Receipts
+    $rcpt_stmt = $pdo->prepare("SELECT id, receipt_number as number, receipt_date as date, total, 'receipt' as type FROM sales_receipts WHERE customer_id = ? AND user_id = ?");
+    $rcpt_stmt->execute([$customer_id, $userId]);
+    while ($row = $rcpt_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
 
-// Credit Notes (Updated Query)
-$cn_sql = "SELECT 
-            cn.id, 
-            cn.credit_note_number as number, 
-            cn.credit_note_date as date, 
-            cn.amount as total, 
-            'credit_note' as type,
-            i.invoice_number as reference_invoice
-        FROM credit_notes cn
-        LEFT JOIN invoices i ON cn.invoice_id = i.id
-        WHERE cn.customer_id = ? AND cn.user_id = ?";
-$cn_stmt = $pdo->prepare($cn_sql);
-$cn_stmt->execute([$customer_id, $userId]);
-while ($row = $cn_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
+    // Credit Notes (Updated Query)
+    $cn_sql = "SELECT
+                cn.id,
+                cn.credit_note_number as number,
+                cn.credit_note_date as date,
+                cn.amount as total,
+                'credit_note' as type,
+                i.invoice_number as reference_invoice
+            FROM credit_notes cn
+            LEFT JOIN invoices i ON cn.invoice_id = i.id
+            WHERE cn.customer_id = ? AND cn.user_id = ?";
+    $cn_stmt = $pdo->prepare($cn_sql);
+    $cn_stmt->execute([$customer_id, $userId]);
+    while ($row = $cn_stmt->fetch(PDO::FETCH_ASSOC)) { $transactions[] = $row; }
+} catch (Exception $e) {
+    // Log error but don't fail completely - just show no transactions
+    error_log("Error fetching transactions for customer {$customer_id}: " . $e->getMessage());
+    $transactions = [];
+}
 
 
 // Sort all transactions by date DESC

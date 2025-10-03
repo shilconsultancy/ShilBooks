@@ -6,7 +6,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     header("location: " . BASE_PATH . "index.php"); exit;
 }
 
-$userId = $_SESSION['user_id'];
 $cn_id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 if ($cn_id == 0) { header("location: index.php"); exit; }
 
@@ -26,7 +25,7 @@ if (!$credit_note) { header("location: index.php"); exit; }
 $settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
 $settings_stmt->execute();
 $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+$s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 $pageTitle = 'Print Credit Note ' . htmlspecialchars($credit_note['credit_note_number']);
 ?>
@@ -49,8 +48,15 @@ $pageTitle = 'Print Credit Note ' . htmlspecialchars($credit_note['credit_note_n
         
         <header class="flex justify-between items-start pb-4 border-b">
             <div class="w-1/2 flex justify-left">
-                <?php $logoPath = BASE_PATH . 'uploads/1/logo.png'; ?>
+                <?php
+                $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
+                $logo_setting->execute();
+                $logo_file = $logo_setting->fetchColumn();
+                $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                ?>
+                <?php if (file_exists('../' . $logoPath)): ?>
                 <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">
+                <?php endif; ?>
             </div>
             <div class="w-1/2 text-right">
                 <h2 class="text-4xl font-bold uppercase text-gray-800">Credit Note</h2>

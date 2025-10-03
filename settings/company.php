@@ -70,6 +70,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $pdo->commit();
         $message = "Settings saved successfully!";
+
+        // Refresh settings after saving
+        $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
+        $stmt->execute();
+        $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+        $s = function($key, $default = '') use ($settings_raw) { return htmlspecialchars($settings_raw[$key] ?? $default); };
     } catch (Exception $e) {
         $pdo->rollBack();
         $errors[] = "Error saving settings: " . $e->getMessage();
@@ -77,10 +83,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 }
 
 // --- Fetch all existing settings to display in the form ---
-$stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
-$stmt->execute();
-$settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+try {
+    $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
+    $stmt->execute();
+    $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (Exception $e) {
+    $settings_raw = [];
+    $errors[] = "Warning: Could not load existing settings. " . $e->getMessage();
+}
+$s = function($key, $default = '') use ($settings_raw) { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 $pageTitle = 'Company Settings';
 require_once '../partials/header.php';

@@ -7,8 +7,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
-
 // Fetch all quotes, joining with customers table to get customer name
 $sql = "SELECT q.*, c.name AS customer_name
         FROM quotes q

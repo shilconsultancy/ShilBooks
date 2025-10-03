@@ -43,7 +43,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         // Sanitize deleted taxes input
         $deleted_taxes_raw = isset($_POST['deleted_taxes']) && !empty($_POST['deleted_taxes']) ? explode(',', $_POST['deleted_taxes']) : [];
         $deleted_taxes = array_map('intval', $deleted_taxes_raw);
-        $deleted_taxes = array_filter($deleted_taxes, fn($id) => $id > 0);
+        $deleted_taxes = array_filter($deleted_taxes, function($id) { return $id > 0; });
 
 
         // Delete taxes marked for deletion
@@ -92,7 +92,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 $stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings");
 $stmt->execute();
 $settings_raw = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = fn($key, $default = '') => htmlspecialchars($settings_raw[$key] ?? $default);
+$s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 $tax_stmt = $pdo->prepare("SELECT * FROM tax_rates ORDER BY tax_name ASC");
 $tax_stmt->execute();

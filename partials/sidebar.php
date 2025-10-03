@@ -42,7 +42,7 @@ $is_settings_page = (strpos($currentUri, '/settings/') !== false);
 
     <div class="p-4 border-b border-macgray-700 flex items-center space-x-3">
         <?php if (!empty($_SESSION['profile_picture'])): ?>
-            <img src="<?php echo BASE_PATH . 'uploads/' . $_SESSION['user_id'] . '/profile/' . $_SESSION['profile_picture'] . '?t=' . time(); ?>" alt="Profile Picture" class="w-10 h-10 rounded-full object-cover">
+            <img src="<?php echo BASE_PATH . 'uploads/company/profile/' . $_SESSION['profile_picture'] . '?t=' . time(); ?>" alt="Profile Picture" class="w-10 h-10 rounded-full object-cover">
         <?php else: ?>
             <div class="w-10 h-10 rounded-full bg-macblue-500 flex items-center justify-center">
                 <i data-feather="user" class="text-white"></i>

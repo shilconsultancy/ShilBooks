@@ -14,7 +14,6 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
     exit;
 }
 
-$userId = $_SESSION['user_id'];
 $errors = [];
 $message = '';
 
@@ -30,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (empty($name) || empty($email)) { $errors[] = "Name and email are required."; }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $errors[] = "Invalid email format."; }
-    if (!in_array($role, ['admin, staff', 'accountant', 'auditor'])) { $errors[] = "Invalid role selected."; }
+    if (!in_array($role, ['admin', 'staff', 'accountant', 'auditor'])) { $errors[] = "Invalid role selected."; }
 
 
     // Check if email is already taken by another user
@@ -81,7 +80,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 // --- Handle GET request (Delete User) ---
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
     $delete_id = (int)$_GET['id'];
-    if ($delete_id != $userId) {
+    if ($delete_id != $_SESSION['user_id']) {
         $sql = "DELETE FROM users WHERE id = ?";
         $stmt = $pdo->prepare($sql);
         if ($stmt->execute([$delete_id])) {
@@ -142,7 +141,7 @@ require_once '../partials/sidebar.php';
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><span class="px-2 py-1 text-xs font-medium rounded-full <?php echo ($user['role'] == 'admin') ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'; ?>"><?php echo htmlspecialchars(ucfirst($user['role'])); ?></span></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-macgray-500"><?php echo htmlspecialchars(date("M d, Y", strtotime($user['created_at']))); ?></td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <?php if ($user['id'] != $userId): ?>
+                                        <?php if ($user['id'] != $_SESSION['user_id']): ?>
                                         <button class="editBtn text-macblue-600 hover:text-macblue-900" 
                                             data-id="<?php echo $user['id']; ?>"
                                             data-name="<?php echo htmlspecialchars($user['name']); ?>"

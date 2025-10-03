@@ -26,8 +26,8 @@ $items_stmt = $pdo->prepare($items_sql);
 $items_stmt->execute(['id' => $journal_id]);
 $items = $items_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$debits = array_filter($items, fn($item) => $item['type'] == 'debit');
-$credits = array_filter($items, fn($item) => $item['type'] == 'credit');
+$debits = array_filter($items, function($item) { return $item['type'] == 'debit'; });
+$credits = array_filter($items, function($item) { return $item['type'] == 'credit'; });
 $total = array_sum(array_column($debits, 'amount'));
 
 $pageTitle = 'View Journal Entry';

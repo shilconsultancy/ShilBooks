@@ -98,10 +98,17 @@ define('DB_NAME', 'accounting_app');
 
 // --- Establish Database Connection ---
 try {
-    $pdo = new PDO("mysql:host=" . DB_HOST . ";dbname=" . DB_NAME, DB_USER, DB_PASS);
+    // Try TCP connection first, fallback to socket if needed
+    $pdo = new PDO("mysql:host=" . DB_HOST . ";port=3306;dbname=" . DB_NAME, DB_USER, DB_PASS);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch(PDOException $e){
-    die("ERROR: Could not connect. " . $e->getMessage());
+    try {
+        // Fallback to socket connection
+        $pdo = new PDO("mysql:host=" . DB_HOST . ";unix_socket=/Applications/XAMPP/xamppfiles/var/mysql/mysql.sock;dbname=" . DB_NAME, DB_USER, DB_PASS);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    } catch(PDOException $e2){
+        die("ERROR: Could not connect to database. " . $e2->getMessage());
+    }
 }
 
 // --- LOAD GLOBAL SETTINGS ---
