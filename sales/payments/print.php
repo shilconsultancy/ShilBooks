@@ -47,84 +47,226 @@ $pageTitle = 'Print Payment Receipt';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+        }
+        .invoice-box {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            padding: 25mm 20mm;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+            font-size: 14px;
+            color: #333;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .logo img {
+            max-width: 120px;
+            border-radius: 6px;
+        }
+        .invoice-details {
+            text-align: right;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #222;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .billing {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        .billing .bill-from,
+        .billing .bill-to {
+            width: 48%;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #f0f0f0;
+        }
+        table th {
+            padding: 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        table td {
+            padding: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+        }
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Alignment */
+        table th:nth-child(1),
+        table td:nth-child(1) {
+            text-align: left;
+        }
+        table th:nth-child(2),
+        table th:nth-child(3),
+        table th:nth-child(4),
+        table td:nth-child(2),
+        table td:nth-child(3),
+        table td:nth-child(4) {
+            text-align: right;
+        }
+
+        .totals {
+            margin-top: 20px;
+            width: 300px;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals td {
+            padding: 8px;
+            border-top: 1px solid #eee;
+        }
+        .totals .label {
+            text-align: left;
+            font-weight: bold;
+            background: #f9f9f9;
+        }
+        .totals .value {
+            text-align: right;
+        }
+        .payment-details {
+            clear: both;
+            margin-top: 50px;
+            font-size: 13px;
+            color: #555;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
         @media print {
-            body { -webkit-print-color-adjust: exact; }
+            body {
+                background: #fff;
+            }
+            .invoice-box {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+            }
+            table thead {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .totals .label {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .no-print { display: none; }
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto my-8 bg-white p-10 shadow-lg">
-        
-        <header class="flex justify-between items-start pb-4 border-b">
-            <div class="w-1/2 flex justify-left">
+<body>
+    <div class="invoice-box">
+
+        <!-- Header -->
+        <div class="top-bar">
+            <div class="logo">
                 <?php
                 $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
                 $logo_setting->execute();
                 $logo_file = $logo_setting->fetchColumn();
-                $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : 'https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A';
                 ?>
-                <?php if (file_exists('../' . $logoPath)): ?>
-                <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">
-                <?php endif; ?>
+                <img src="<?php echo $logoPath; ?>" alt="Company Logo">
             </div>
-            <div class="w-1/2 text-right">
-                <h2 class="text-4xl font-bold uppercase text-gray-800">Payment Receipt</h2>
-                <p class="text-gray-500 mt-2">Ref #: <?php echo htmlspecialchars($payment['id']); ?></p>
+            <div class="invoice-details">
+                <h2>Payment Receipt</h2>
+                <strong>Receipt #:</strong> <?php echo htmlspecialchars($payment['id']); ?><br>
+                <strong>Date:</strong> <?php echo date("d/m/Y", strtotime($payment['payment_date'])); ?><br>
+                <strong>Method:</strong> <?php echo htmlspecialchars($payment['payment_method']); ?>
             </div>
-        </header>
+        </div>
 
-        <section class="mt-8 flex justify-between">
-            <div>
-                <h4 class="font-semibold text-gray-500">Payment From</h4>
-                <p class="font-bold text-gray-800"><?php echo htmlspecialchars($payment['customer_name']); ?></p>
-                <p class="text-gray-600"><?php echo nl2br(htmlspecialchars($payment['customer_address'])); ?></p>
+        <!-- Bill From / To -->
+        <div class="billing">
+            <div class="bill-from">
+                <strong>Bill From:</strong><br>
+                <?php echo $s('company_name', 'Your Company'); ?><br>
+                <?php echo nl2br($s('company_address')); ?><br>
+                Phone: <?php echo $s('company_phone'); ?><br>
+                Email: <?php echo $s('company_email'); ?>
             </div>
-            <div class="text-right">
-                 <div class="grid grid-cols-2 gap-x-4">
-                    <p class="font-semibold text-gray-500">Payment Date:</p>
-                    <p class="text-gray-800"><?php echo htmlspecialchars(date("M d, Y", strtotime($payment['payment_date']))); ?></p>
-                    <p class="font-semibold text-gray-500">Payment Method:</p>
-                    <p class="text-gray-800"><?php echo htmlspecialchars($payment['payment_method']); ?></p>
-                </div>
+            <div class="bill-to">
+                <strong>Payment From:</strong><br>
+                <?php echo htmlspecialchars($payment['customer_name']); ?><br>
+                <?php echo nl2br(htmlspecialchars($payment['customer_address'])); ?>
             </div>
-        </section>
+        </div>
 
-        <section class="mt-10">
-            <div class="text-center mb-6">
-                <p class="text-gray-500">Amount Received</p>
-                <p class="text-5xl font-bold text-green-600"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($payment['amount'], 2); ?></p>
-            </div>
-            
-            <h3 class="text-lg font-semibold text-gray-700 mb-2">Summary of Payment</h3>
-            <table class="w-full">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice #</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Invoice Date</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Amount Applied</th>
+        <!-- Payment Amount -->
+        <table class="totals">
+            <tr>
+                <td class="label" style="font-size: 16px;">Amount Received</td>
+                <td class="value" style="font-size: 16px; color: #28a745;"><strong><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($payment['amount'], 2); ?></strong></td>
+            </tr>
+        </table>
+
+        <?php if (!empty($linked_invoices)): ?>
+        <!-- Payment Details -->
+        <div class="payment-details">
+            <strong>Payment Applied To:</strong><br>
+            <table style="width: 100%; margin-top: 10px;">
+                <thead>
+                    <tr style="background: #f0f0f0;">
+                        <th style="padding: 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #333; border-bottom: 2px solid #ddd;">Invoice #</th>
+                        <th style="padding: 8px; text-align: left; font-size: 12px; text-transform: uppercase; color: #333; border-bottom: 2px solid #ddd;">Invoice Date</th>
+                        <th style="padding: 8px; text-align: right; font-size: 12px; text-transform: uppercase; color: #333; border-bottom: 2px solid #ddd;">Amount Applied</th>
                     </tr>
                 </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
+                <tbody>
                     <?php foreach ($linked_invoices as $link): ?>
                     <tr>
-                        <td class="px-6 py-4 font-medium text-gray-900"><?php echo htmlspecialchars($link['invoice_number']); ?></td>
-                        <td class="px-6 py-4 text-gray-500"><?php echo htmlspecialchars(date("M d, Y", strtotime($link['invoice_date']))); ?></td>
-                        <td class="px-6 py-4 text-right font-medium text-gray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($link['amount_applied'], 2); ?></td>
+                        <td style="padding: 8px; font-size: 12px; border-bottom: 1px solid #eee;"><?php echo htmlspecialchars($link['invoice_number']); ?></td>
+                        <td style="padding: 8px; font-size: 12px; border-bottom: 1px solid #eee;"><?php echo date("d/m/Y", strtotime($link['invoice_date'])); ?></td>
+                        <td style="padding: 8px; font-size: 12px; text-align: right; border-bottom: 1px solid #eee;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($link['amount_applied'], 2); ?></td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
             </table>
-        </section>
+        </div>
+        <?php endif; ?>
 
-        <footer class="text-center mt-12 pt-6 border-t text-gray-500 text-sm">
-             <p><?php echo $s('company_name'); ?> | <?php echo $s('company_email'); ?> | <?php echo $s('company_phone'); ?></p>
-             <p><?php echo $s('company_address'); ?></p>
-        </footer>
+        <!-- Footer -->
+        <div class="footer">
+            Thank you for your payment! <br>
+            This is a computer-generated payment receipt.
+        </div>
     </div>
 
     <div class="fixed bottom-5 right-5 no-print">

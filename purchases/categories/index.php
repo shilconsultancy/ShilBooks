@@ -45,15 +45,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 // Handle GET request (Delete a Category)
 if (isset($_GET['action']) && $_GET['action'] == 'delete' && isset($_GET['id'])) {
-    if (hasPermission('admin')) {
-        $delete_id = (int)$_GET['id'];
-        // You might want to check if this category is in use before deleting
+    $delete_id = (int)$_GET['id'];
+
+    // Check if category is being used by any expenses
+    $check_sql = "SELECT COUNT(*) FROM expenses WHERE category_id = :id";
+    $check_stmt = $pdo->prepare($check_sql);
+    $check_stmt->execute(['id' => $delete_id]);
+    $usage_count = $check_stmt->fetchColumn();
+
+    if ($usage_count > 0) {
+        $errors[] = "Cannot delete this category because it is currently being used by " . $usage_count . " expense(s).";
+    } else {
         $sql = "DELETE FROM expense_categories WHERE id = :id";
         $stmt = $pdo->prepare($sql);
         $stmt->bindParam(':id', $delete_id, PDO::PARAM_INT);
         if ($stmt->execute()) {
             header("location: index.php");
             exit;
+        } else {
+            $errors[] = "Failed to delete category. Please try again.";
         }
     }
 }
@@ -80,6 +90,13 @@ require_once '../../partials/sidebar.php';
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-4xl mx-auto">
+            <?php if (!empty($errors)): ?>
+                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+                    <?php foreach ($errors as $error): ?>
+                        <p><?php echo htmlspecialchars($error); ?></p>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
             <div class="bg-white rounded-xl shadow-sm border border-macgray-200">
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-macgray-200">
@@ -99,12 +116,10 @@ require_once '../../partials/sidebar.php';
                                     <tr>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-macgray-900"><?php echo htmlspecialchars($category['name']); ?></td>
                                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button class="editBtn text-macblue-600 hover:text-macblue-900" 
+                                            <button class="editBtn text-macblue-600 hover:text-macblue-900"
                                                     data-id="<?php echo $category['id']; ?>"
                                                     data-name="<?php echo htmlspecialchars($category['name']); ?>">Edit</button>
-                                            <?php if (hasPermission('admin')): ?>
-                                                <a href="index.php?action=delete&id=<?php echo $category['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? Deleting a category will fail if it is currently used by any expenses.');">Delete</a>
-                                            <?php endif; ?>
+                                            <a href="index.php?action=delete&id=<?php echo $category['id']; ?>" class="text-red-600 hover:text-red-900 ml-4" onclick="return confirm('Are you sure? This action cannot be undone and will fail if the category is currently used by any expenses.');">Delete</a>
                                         </td>
                                     </tr>
                                 <?php endforeach; ?>

@@ -62,110 +62,269 @@ $pageTitle = 'Print Statement of Cash Flows';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+        }
+        .invoice-box {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            padding: 25mm 20mm;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+            font-size: 14px;
+            color: #333;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .logo img {
+            max-width: 120px;
+            border-radius: 6px;
+        }
+        .invoice-details {
+            text-align: right;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #222;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .billing {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        .billing .bill-from,
+        .billing .bill-to {
+            width: 48%;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #f0f0f0;
+        }
+        table th {
+            padding: 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        table td {
+            padding: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+        }
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Alignment */
+        table th:nth-child(1),
+        table td:nth-child(1) {
+            text-align: left;
+        }
+        table th:nth-child(2),
+        table th:nth-child(3),
+        table th:nth-child(4),
+        table td:nth-child(2),
+        table td:nth-child(3),
+        table td:nth-child(4) {
+            text-align: right;
+        }
+
+        .totals {
+            margin-top: 20px;
+            width: 300px;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals td {
+            padding: 8px;
+            border-top: 1px solid #eee;
+        }
+        .totals .label {
+            text-align: left;
+            font-weight: bold;
+            background: #f9f9f9;
+        }
+        .totals .value {
+            text-align: right;
+        }
+        .payment-details {
+            clear: both;
+            margin-top: 50px;
+            font-size: 13px;
+            color: #555;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
         @media print {
-            body { -webkit-print-color-adjust: exact; }
+            body {
+                background: #fff;
+            }
+            .invoice-box {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+            }
+            table thead {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .totals .label {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .no-print { display: none; }
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto my-8 bg-white p-10 shadow-lg">
+<body>
+    <div class="invoice-box">
 
-        <header class="flex justify-between items-start pb-4 border-b">
-            <div class="w-1/2 flex justify-left">
+        <!-- Header -->
+        <div class="top-bar">
+            <div class="logo">
                 <?php
                 $logo_file = '';
-                $logoPath = BASE_PATH . 'uploads/company/logo.png';
+                $logoPath = 'https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A';
                 try {
                     $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
                     $logo_setting->execute();
                     $logo_file = $logo_setting->fetchColumn();
-                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : 'https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A';
                 } catch (Exception $e) {
                     // Use default logo path if database query fails
                 }
                 ?>
-                <?php if (file_exists('../' . $logoPath)): ?>
-                <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">
-                <?php endif; ?>
+                <img src="<?php echo $logoPath; ?>" alt="Company Logo">
             </div>
-            <div class="w-1/2 text-right">
-                <h2 class="text-2xl font-bold uppercase text-gray-800">Statement of Cash Flows</h2>
-                <p class="text-gray-500 mt-2"><?php echo htmlspecialchars(date("M d, Y", strtotime($start_date))) . " - " . htmlspecialchars(date("M d, Y", strtotime($end_date))); ?></p>
+            <div class="invoice-details">
+                <h2>Statement of Cash Flows</h2>
+                <strong>Period:</strong> <?php echo htmlspecialchars(date("M d, Y", strtotime($start_date))) . " - " . htmlspecialchars(date("M d, Y", strtotime($end_date))); ?>
             </div>
-        </header>
+        </div>
 
-        <section class="mt-10">
-            <div class="space-y-8">
-                <!-- Cash from Operating Activities -->
-                <div>
-                    <h3 class="text-lg font-semibold text-macgray-800 border-b pb-2 mb-4">Cash Flows from Operating Activities</h3>
-                    <div class="space-y-2 text-sm">
-                        <div class="flex justify-between">
-                            <span class="text-macgray-600">Cash received from customers (Invoice payments)</span>
-                            <span class="text-green-600">+ <?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromInvoices, 2); ?></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-macgray-600">Cash paid for expenses</span>
-                            <span class="text-red-600"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromExpenses, 2); ?></span>
-                        </div>
-                    </div>
-                    <div class="flex justify-between mt-4 pt-2 border-t font-bold">
-                        <span>Net cash from operating activities</span>
-                        <span class="<?php echo $cashFromOperations >= 0 ? 'text-green-600' : 'text-red-600'; ?>"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromOperations, 2); ?></span>
-                    </div>
-                </div>
-
-                <!-- Cash from Investing Activities -->
-                <div>
-                    <h3 class="text-lg font-semibold text-macgray-800 border-b pb-2 mb-4">Cash Flows from Investing Activities</h3>
-                    <div class="space-y-2 text-sm">
-                        <p class="text-macgray-500 text-sm italic">Investment activities will be tracked here</p>
-                    </div>
-                    <div class="flex justify-between mt-4 pt-2 border-t font-bold">
-                        <span>Net cash from investing activities</span>
-                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromInvesting, 2); ?></span>
-                    </div>
-                </div>
-
-                <!-- Cash from Financing Activities -->
-                <div>
-                    <h3 class="text-lg font-semibold text-macgray-800 border-b pb-2 mb-4">Cash Flows from Financing Activities</h3>
-                    <div class="space-y-2 text-sm">
-                        <p class="text-macgray-500 text-sm italic">Financing activities will be tracked here</p>
-                    </div>
-                    <div class="flex justify-between mt-4 pt-2 border-t font-bold">
-                        <span>Net cash from financing activities</span>
-                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromFinancing, 2); ?></span>
-                    </div>
-                </div>
-
-                <!-- Net Cash Flow -->
-                <div class="pt-4 border-t-2 border-macgray-800">
-                    <div class="flex justify-between font-bold text-xl <?php echo $netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
-                        <span>Net increase in cash</span>
-                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netCashFlow, 2); ?></span>
-                    </div>
-                    <div class="flex justify-between mt-2 text-macgray-600">
-                        <span>Cash at beginning of period</span>
-                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($beginningCash, 2); ?></span>
-                    </div>
-                    <div class="flex justify-between mt-2 pt-2 border-t font-bold text-lg">
-                        <span>Cash at end of period</span>
-                        <span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($endingCash, 2); ?></span>
-                    </div>
+        <!-- Company Info -->
+        <div class="billing">
+            <div class="bill-from">
+                <strong>Report Generated By:</strong><br>
+                <?php echo $s('company_name', 'Your Company'); ?><br>
+                <?php echo nl2br($s('company_address')); ?><br>
+                Phone: <?php echo $s('company_phone'); ?><br>
+                Email: <?php echo $s('company_email'); ?>
+            </div>
+            <div class="bill-to">
+                <!-- Summary -->
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px; font-size: 12px; color: #666;"><strong>Net Cash Flow:</strong></td>
+                            <td style="padding: 5px; text-align: right; font-size: 14px; font-weight: bold; color: <?php echo $netCashFlow >= 0 ? '#28a745' : '#dc3545'; ?>;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netCashFlow, 2); ?></td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px; font-size: 12px; color: #666;"><strong>Ending Cash:</strong></td>
+                            <td style="padding: 5px; text-align: right; font-size: 14px; font-weight: bold; color: #333;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($endingCash, 2); ?></td>
+                        </tr>
+                    </table>
                 </div>
             </div>
-        </section>
+        </div>
 
-        <footer class="text-center mt-12 pt-6 border-t text-gray-500 text-sm">
-             <p><?php echo $s('company_name'); ?> | <?php echo $s('company_email'); ?> | <?php echo $s('company_phone'); ?></p>
-             <p><?php echo $s('company_address'); ?></p>
-        </footer>
+        <!-- Cash Flow Sections -->
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Cash Flows from Operating Activities</h3>
+            <table style="width: 100%; margin-bottom: 20px;">
+                <tr>
+                    <td>Cash received from customers (Invoice payments)</td>
+                    <td style="text-align: right; color: #28a745;">+ <?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromInvoices, 2); ?></td>
+                </tr>
+                <tr>
+                    <td>Cash paid for expenses</td>
+                    <td style="text-align: right; color: #dc3545;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromExpenses, 2); ?></td>
+                </tr>
+            </table>
+            <table class="totals">
+                <tr>
+                    <td class="label">Net cash from operating activities</td>
+                    <td class="value" style="color: <?php echo $cashFromOperations >= 0 ? '#28a745' : '#dc3545'; ?>;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromOperations, 2); ?></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <h3 style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Cash Flows from Investing Activities</h3>
+            <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">Investment activities will be tracked here</p>
+            <table class="totals">
+                <tr>
+                    <td class="label">Net cash from investing activities</td>
+                    <td class="value"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromInvesting, 2); ?></td>
+                </tr>
+            </table>
+        </div>
+
+        <div style="margin-top: 40px;">
+            <h3 style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Cash Flows from Financing Activities</h3>
+            <p style="text-align: center; color: #666; font-style: italic; margin-bottom: 20px;">Financing activities will be tracked here</p>
+            <table class="totals">
+                <tr>
+                    <td class="label">Net cash from financing activities</td>
+                    <td class="value"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($cashFromFinancing, 2); ?></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Net Cash Flow Summary -->
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 3px solid #333;">
+            <table class="totals">
+                <tr>
+                    <td class="label" style="font-size: 16px; color: <?php echo $netCashFlow >= 0 ? '#28a745' : '#dc3545'; ?>;">Net increase in cash</td>
+                    <td class="value" style="font-size: 16px; font-weight: bold; color: <?php echo $netCashFlow >= 0 ? '#28a745' : '#dc3545'; ?>;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netCashFlow, 2); ?></td>
+                </tr>
+                <tr>
+                    <td class="label">Cash at beginning of period</td>
+                    <td class="value"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($beginningCash, 2); ?></td>
+                </tr>
+                <tr>
+                    <td class="label"><strong>Cash at end of period</strong></td>
+                    <td class="value"><strong><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($endingCash, 2); ?></strong></td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <?php echo $s('company_name'); ?> | <?php echo $s('company_email'); ?> | <?php echo $s('company_phone'); ?><br>
+            <?php echo $s('company_address'); ?><br>
+            This is a computer-generated financial report.
+        </div>
     </div>
 
     <div class="fixed bottom-5 right-5 no-print">

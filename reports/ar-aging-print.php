@@ -54,98 +54,258 @@ $pageTitle = 'Print A/R Aging Report';
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $pageTitle; ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f9f9f9;
+        }
+        .invoice-box {
+            width: 210mm;
+            min-height: 297mm;
+            background: #fff;
+            padding: 25mm 20mm;
+            margin: 20px auto;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,.1);
+            font-size: 14px;
+            color: #333;
+        }
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+        .logo img {
+            max-width: 120px;
+            border-radius: 6px;
+        }
+        .invoice-details {
+            text-align: right;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+        }
+        h2 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #222;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .billing {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+        .billing .bill-from,
+        .billing .bill-to {
+            width: 48%;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.6;
+            text-align: left;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table thead {
+            background: #f0f0f0;
+        }
+        table th {
+            padding: 10px;
+            font-size: 13px;
+            text-transform: uppercase;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+        }
+        table td {
+            padding: 10px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+        }
+        table tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Alignment */
+        table th:nth-child(1),
+        table td:nth-child(1) {
+            text-align: left;
+        }
+        table th:nth-child(2),
+        table th:nth-child(3),
+        table th:nth-child(4),
+        table td:nth-child(2),
+        table td:nth-child(3),
+        table td:nth-child(4) {
+            text-align: right;
+        }
+
+        .totals {
+            margin-top: 20px;
+            width: 300px;
+            float: right;
+            border-collapse: collapse;
+        }
+        .totals td {
+            padding: 8px;
+            border-top: 1px solid #eee;
+        }
+        .totals .label {
+            text-align: left;
+            font-weight: bold;
+            background: #f9f9f9;
+        }
+        .totals .value {
+            text-align: right;
+        }
+        .payment-details {
+            clear: both;
+            margin-top: 50px;
+            font-size: 13px;
+            color: #555;
+        }
+        .footer {
+            margin-top: 40px;
+            font-size: 12px;
+            text-align: center;
+            color: #888;
+        }
         @media print {
-            body { -webkit-print-color-adjust: exact; }
+            body {
+                background: #fff;
+            }
+            .invoice-box {
+                box-shadow: none;
+                margin: 0;
+                border-radius: 0;
+            }
+            table thead {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .totals .label {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
             .no-print { display: none; }
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="max-w-4xl mx-auto my-8 bg-white p-10 shadow-lg">
-        
-        <header class="flex justify-between items-start pb-4 border-b">
-            <div class="w-1/2 flex justify-left">
+<body>
+    <div class="invoice-box">
+
+        <!-- Header -->
+        <div class="top-bar">
+            <div class="logo">
                 <?php
                 $logo_file = '';
-                $logoPath = BASE_PATH . 'uploads/company/logo.png';
+                $logoPath = 'https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A';
                 try {
                     $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
                     $logo_setting->execute();
                     $logo_file = $logo_setting->fetchColumn();
-                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : 'https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A';
                 } catch (Exception $e) {
                     // Use default logo path if database query fails
                 }
                 ?>
-                <?php if (file_exists('../' . $logoPath)): ?>
-                <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">
-                <?php endif; ?>
+                <img src="<?php echo $logoPath; ?>" alt="Company Logo">
             </div>
-            <div class="w-1/2 text-right">
-                <h2 class="text-2xl font-bold uppercase text-gray-800">A/R Aging Summary</h2>
-                <p class="text-gray-500 mt-2">As of <?php echo htmlspecialchars(date("F d, Y", strtotime($as_of_date))); ?></p>
+            <div class="invoice-details">
+                <h2>A/R Aging Summary</h2>
+                <strong>As of:</strong> <?php echo htmlspecialchars(date("F d, Y", strtotime($as_of_date))); ?>
             </div>
-        </header>
+        </div>
 
-        <section class="mt-10">
-            <table class="w-full mb-8">
-                <thead class="border-b-2 border-macgray-300">
+        <!-- Company Info -->
+        <div class="billing">
+            <div class="bill-from">
+                <strong>Report Generated By:</strong><br>
+                <?php echo $s('company_name', 'Your Company'); ?><br>
+                <?php echo nl2br($s('company_address')); ?><br>
+                Phone: <?php echo $s('company_phone'); ?><br>
+                Email: <?php echo $s('company_email'); ?>
+            </div>
+            <div class="bill-to">
+                <!-- Summary -->
+                <div style="background: #f9f9f9; padding: 15px; border-radius: 6px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px; font-size: 12px; color: #666;"><strong>Total Outstanding:</strong></td>
+                            <td style="padding: 5px; text-align: right; font-size: 14px; font-weight: bold; color: #dc3545;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grand_total, 2); ?></td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Aging Summary Table -->
+        <div style="margin-top: 30px;">
+            <h3 style="font-size: 16px; font-weight: bold; color: #333; margin-bottom: 15px; border-bottom: 2px solid #ddd; padding-bottom: 5px;">Aging Summary</h3>
+            <table style="width: 100%; margin-bottom: 30px;">
+                <thead>
                     <tr>
                         <?php foreach (array_keys($buckets) as $bucket_name): ?>
-                        <th class="px-4 py-2 text-right text-sm font-semibold text-macgray-600"><?php echo $bucket_name; ?></th>
+                        <th style="text-align: right;"><?php echo $bucket_name; ?></th>
                         <?php endforeach; ?>
-                        <th class="px-4 py-2 text-right text-sm font-semibold text-macgray-800">Total</th>
+                        <th style="text-align: right;">Total</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
                         <?php foreach ($totals as $total): ?>
-                        <td class="px-4 py-3 text-right text-sm font-medium text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($total, 2); ?></td>
+                        <td style="text-align: right;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($total, 2); ?></td>
                         <?php endforeach; ?>
-                        <td class="px-4 py-3 text-right text-sm font-bold text-macgray-900"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grand_total, 2); ?></td>
+                        <td style="text-align: right; font-weight: bold;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grand_total, 2); ?></td>
                     </tr>
                 </tbody>
             </table>
+        </div>
 
-            <div class="space-y-6">
-                <?php foreach ($buckets as $bucket_name => $invoices): ?>
-                    <?php if (!empty($invoices)): ?>
-                    <div>
-                        <h3 class="text-lg font-semibold text-macgray-800 border-b pb-2 mb-2"><?php echo $bucket_name; ?></h3>
-                        <table class="min-w-full">
-                            <thead>
+        <!-- Detailed Breakdown -->
+        <div style="margin-top: 30px;">
+            <?php foreach ($buckets as $bucket_name => $invoices): ?>
+                <?php if (!empty($invoices)): ?>
+                <div style="margin-bottom: 30px;">
+                    <h3 style="font-size: 14px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px;"><?php echo $bucket_name; ?> - <?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totals[$bucket_name], 2); ?></h3>
+                    <table style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th>Invoice #</th>
+                                <th>Due Date</th>
+                                <th>Balance Due</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($invoices as $invoice): ?>
                                 <tr>
-                                    <th class="py-2 text-left text-xs font-medium text-macgray-500">Customer</th>
-                                    <th class="py-2 text-left text-xs font-medium text-macgray-500">Invoice #</th>
-                                    <th class="py-2 text-left text-xs font-medium text-macgray-500">Due Date</th>
-                                    <th class="py-2 text-right text-xs font-medium text-macgray-500">Balance Due</th>
+                                    <td><?php echo htmlspecialchars($invoice['customer_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($invoice['invoice_number']); ?></td>
+                                    <td><?php echo htmlspecialchars(date("d/m/Y", strtotime($invoice['due_date']))); ?></td>
+                                    <td style="text-align: right;"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($invoice['balance_due'], 2); ?></td>
                                 </tr>
-                            </thead>
-                            <tbody class="divide-y divide-macgray-100">
-                                <?php foreach ($invoices as $invoice): ?>
-                                    <tr>
-                                        <td class="py-2 text-sm text-macgray-600"><?php echo htmlspecialchars($invoice['customer_name']); ?></td>
-                                        <td class="py-2 text-sm text-macgray-600"><?php echo htmlspecialchars($invoice['invoice_number']); ?></td>
-                                        <td class="py-2 text-sm text-macgray-600"><?php echo htmlspecialchars(date("M d, Y", strtotime($invoice['due_date']))); ?></td>
-                                        <td class="py-2 text-sm text-right font-medium text-macgray-800"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($invoice['balance_due'], 2); ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php endif; ?>
-                <?php endforeach; ?>
-            </div>
-        </section>
-        
-        <footer class="text-center mt-12 pt-6 border-t text-gray-500 text-sm">
-             <p><?php echo $s('company_name'); ?> | <?php echo $s('company_email'); ?> | <?php echo $s('company_phone'); ?></p>
-             <p><?php echo $s('company_address'); ?></p>
-        </footer>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <?php echo $s('company_name'); ?> | <?php echo $s('company_email'); ?> | <?php echo $s('company_phone'); ?><br>
+            <?php echo $s('company_address'); ?><br>
+            This is a computer-generated aging report.
+        </div>
     </div>
 
     <div class="fixed bottom-5 right-5 no-print">
