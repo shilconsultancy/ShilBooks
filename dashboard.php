@@ -42,11 +42,13 @@ $previous_quarter_dates = get_dates_for_quarter($previous_quarter, $previous_qua
 function getTotalRevenueForPeriod($pdo, $startDate, $endDate) {
     $invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE invoice_date BETWEEN ? AND ?");
     $invoices_total_stmt->execute([$startDate, $endDate]);
-    $grossRevenue = $invoices_total_stmt->fetchColumn() ?? 0;
-    
+    $grossRevenue = $invoices_total_stmt->fetchColumn();
+    $grossRevenue = ($grossRevenue === null || $grossRevenue === false) ? 0 : (float)$grossRevenue;
+
     $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
     $credit_notes_stmt->execute([$startDate, $endDate]);
-    $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    $totalCredits = $credit_notes_stmt->fetchColumn();
+    $totalCredits = ($totalCredits === null || $totalCredits === false) ? 0 : (float)$totalCredits;
     return $grossRevenue - $totalCredits;
 }
 
@@ -54,14 +56,16 @@ function getTotalRevenueForPeriod($pdo, $startDate, $endDate) {
 function getPaymentsReceivedForPeriod($pdo, $startDate, $endDate) {
     $payments_stmt = $pdo->prepare("SELECT SUM(amount) FROM payments WHERE payment_date BETWEEN ? AND ?");
     $payments_stmt->execute([$startDate, $endDate]);
-    return $payments_stmt->fetchColumn() ?? 0;
+    $result = $payments_stmt->fetchColumn();
+    return ($result === null || $result === false) ? 0 : (float)$result;
 }
 
 // Helper function to calculate Expenses for a given period (Cash Basis)
 function getExpensesForPeriod($pdo, $startDate, $endDate) {
     $expenses_stmt = $pdo->prepare("SELECT SUM(amount_paid) FROM expenses WHERE expense_date BETWEEN ? AND ?");
     $expenses_stmt->execute([$startDate, $endDate]);
-    return $expenses_stmt->fetchColumn() ?? 0;
+    $result = $expenses_stmt->fetchColumn();
+    return ($result === null || $result === false) ? 0 : (float)$result;
 }
 
 // Helper function to format percentage change
@@ -90,7 +94,8 @@ $profit_previous_quarter = $payments_received_previous_quarter - $expenses_previ
 
 $outstanding_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue')");
 $outstanding_stmt->execute();
-$outstandingAmount = $outstanding_stmt->fetchColumn() ?? 0;
+$result = $outstanding_stmt->fetchColumn();
+$outstandingAmount = ($result === null || $result === false) ? 0 : (float)$result;
 
 // Fetch pending invoices
 $pending_invoices_sql = "SELECT i.*, c.name as customer_name FROM invoices i JOIN customers c ON i.customer_id = c.id WHERE i.status IN ('sent', 'overdue') ORDER BY i.invoice_date DESC LIMIT 5";
