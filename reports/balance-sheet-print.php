@@ -10,52 +10,66 @@ if (!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true) {
 $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 
 // --- ASSETS ---
-$cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE DATE(created_at) <= ?");
-$cash_stmt->execute([$as_of_date]);
-$totalCash = $cash_stmt->fetchColumn() ?? 0;
+try {
+    $cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE DATE(created_at) <= ?");
+    $cash_stmt->execute([$as_of_date]);
+    $totalCash = $cash_stmt->fetchColumn() ?? 0;
 
-$ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue') AND invoice_date <= ?");
-$ar_stmt->execute([$as_of_date]);
-$totalAR = $ar_stmt->fetchColumn() ?? 0;
+    $ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue') AND invoice_date <= ?");
+    $ar_stmt->execute([$as_of_date]);
+    $totalAR = $ar_stmt->fetchColumn() ?? 0;
 
-$inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE item_type = 'product'");
-$inv_stmt->execute();
-$totalInventory = $inv_stmt->fetchColumn() ?? 0;
+    $inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE item_type = 'product'");
+    $inv_stmt->execute();
+    $totalInventory = $inv_stmt->fetchColumn() ?? 0;
 
-$totalAssets = $totalCash + $totalAR + $totalInventory;
+    $totalAssets = $totalCash + $totalAR + $totalInventory;
 
-// --- LIABILITIES ---
-$totalLiabilities = 0.00; // Placeholder
+    // --- LIABILITIES ---
+    $totalLiabilities = 0.00; // Placeholder
 
-// --- EQUITY ---
-$revenue_start_date = '1970-01-01';
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
-$paid_invoices_total_stmt->execute([$revenue_start_date, $as_of_date]);
-$grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+    // --- EQUITY ---
+    $revenue_start_date = '1970-01-01';
+    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+    $paid_invoices_total_stmt->execute([$revenue_start_date, $as_of_date]);
+    $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+    // Note: Sales receipts feature has been removed from this project
 
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
-$receipts_total_stmt->execute([$revenue_start_date, $as_of_date]);
-$grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
+    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+    $credit_notes_stmt->execute([$revenue_start_date, $as_of_date]);
+    $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    $netRevenue = $grossRevenue - $totalCredits;
 
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
-$credit_notes_stmt->execute([$revenue_start_date, $as_of_date]);
-$totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
-$netRevenue = $grossRevenue - $totalCredits;
+    $expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
+    $expenses_stmt->execute([$revenue_start_date, $as_of_date]);
+    $totalExpenses = $expenses_stmt->fetchColumn() ?? 0;
+    $retainedEarnings = $netRevenue - $totalExpenses;
 
-$expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
-$expenses_stmt->execute([$revenue_start_date, $as_of_date]);
-$totalExpenses = $expenses_stmt->fetchColumn() ?? 0;
-$retainedEarnings = $netRevenue - $totalExpenses;
-
-$ownersEquity = 0.00; // Placeholder
-$totalEquity = $retainedEarnings + $ownersEquity;
-$totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
+    $ownersEquity = 0.00; // Placeholder
+    $totalEquity = $retainedEarnings + $ownersEquity;
+    $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
+} catch (Exception $e) {
+    // Handle database errors gracefully
+    $totalCash = 0;
+    $totalAR = 0;
+    $totalInventory = 0;
+    $totalAssets = 0;
+    $totalLiabilities = 0;
+    $retainedEarnings = 0;
+    $ownersEquity = 0;
+    $totalEquity = 0;
+    $totalLiabilitiesAndEquity = 0;
+}
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
-$settings_stmt->execute();
-$settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
+try {
+    $settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+    $settings_stmt->execute();
+    $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (Exception $e) {
+    $settings_raw = [];
+}
+$s = function($key, $default = '') use ($settings_raw) { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 $pageTitle = 'Print Balance Sheet';
 ?>
@@ -79,10 +93,16 @@ $pageTitle = 'Print Balance Sheet';
         <header class="flex justify-between items-start pb-4 border-b">
             <div class="w-1/2 flex justify-left">
                 <?php
-                $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
-                $logo_setting->execute();
-                $logo_file = $logo_setting->fetchColumn();
-                $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                $logo_file = '';
+                $logoPath = BASE_PATH . 'uploads/company/logo.png';
+                try {
+                    $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
+                    $logo_setting->execute();
+                    $logo_file = $logo_setting->fetchColumn();
+                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                } catch (Exception $e) {
+                    // Use default logo path if database query fails
+                }
                 ?>
                 <?php if (file_exists('../' . $logoPath)): ?>
                 <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">

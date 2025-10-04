@@ -12,37 +12,49 @@ $start_date = $_GET['start_date'] ?? date('Y-m-01');
 $end_date = $_GET['end_date'] ?? date('Y-m-t');
 
 // --- Report Data Fetching ---
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
-$paid_invoices_total_stmt->execute([$start_date, $end_date]);
-$grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+try {
+    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+    $paid_invoices_total_stmt->execute([$start_date, $end_date]);
+    $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+    
+    // Note: Sales receipts feature has been removed from this project
 
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
-$receipts_total_stmt->execute([$start_date, $end_date]);
-$grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
+    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+    $credit_notes_stmt->execute([$start_date, $end_date]);
+    $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    $netRevenue = $grossRevenue - $totalCredits;
 
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
-$credit_notes_stmt->execute([$start_date, $end_date]);
-$totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
-$netRevenue = $grossRevenue - $totalCredits;
+    $expenses_sql = "SELECT ec.name as category_name, SUM(e.amount) as total_amount
+                     FROM expenses e
+                     JOIN expense_categories ec ON e.category_id = ec.id
+                     WHERE e.expense_date BETWEEN ? AND ?
+                     GROUP BY e.category_id
+                     ORDER BY ec.name ASC";
+    $expenses_stmt = $pdo->prepare($expenses_sql);
+    $expenses_stmt->execute([$start_date, $end_date]);
+    $expensesByCategory = $expenses_stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$expenses_sql = "SELECT ec.name as category_name, SUM(e.amount) as total_amount
-                 FROM expenses e
-                 JOIN expense_categories ec ON e.category_id = ec.id
-                 WHERE e.expense_date BETWEEN ? AND ?
-                 GROUP BY e.category_id
-                 ORDER BY ec.name ASC";
-$expenses_stmt = $pdo->prepare($expenses_sql);
-$expenses_stmt->execute([$start_date, $end_date]);
-$expensesByCategory = $expenses_stmt->fetchAll(PDO::FETCH_ASSOC);
-
-$totalExpenses = array_sum(array_column($expensesByCategory, 'total_amount'));
-$netProfit = $netRevenue - $totalExpenses;
+    $totalExpenses = array_sum(array_column($expensesByCategory, 'total_amount'));
+    $netProfit = $netRevenue - $totalExpenses;
+} catch (Exception $e) {
+    // Handle database errors gracefully
+    $grossRevenue = 0;
+    $totalCredits = 0;
+    $netRevenue = 0;
+    $expensesByCategory = [];
+    $totalExpenses = 0;
+    $netProfit = 0;
+}
 
 // Fetch company settings
-$settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
-$settings_stmt->execute();
-$settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
-$s = function($key, $default = '') { return htmlspecialchars($settings_raw[$key] ?? $default); };
+try {
+    $settings_stmt = $pdo->prepare("SELECT setting_key, setting_value FROM settings WHERE setting_key LIKE 'company_%'");
+    $settings_stmt->execute();
+    $settings_raw = $settings_stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+} catch (Exception $e) {
+    $settings_raw = [];
+}
+$s = function($key, $default = '') use ($settings_raw) { return htmlspecialchars($settings_raw[$key] ?? $default); };
 
 $pageTitle = 'Print Profit & Loss';
 ?>
@@ -66,10 +78,16 @@ $pageTitle = 'Print Profit & Loss';
         <header class="flex justify-between items-start pb-4 border-b">
             <div class="w-1/2 flex justify-left">
                 <?php
-                $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
-                $logo_setting->execute();
-                $logo_file = $logo_setting->fetchColumn();
-                $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                $logo_file = '';
+                $logoPath = BASE_PATH . 'uploads/company/logo.png';
+                try {
+                    $logo_setting = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = 'company_logo'");
+                    $logo_setting->execute();
+                    $logo_file = $logo_setting->fetchColumn();
+                    $logoPath = $logo_file ? BASE_PATH . 'uploads/company/' . $logo_file : BASE_PATH . 'uploads/company/logo.png';
+                } catch (Exception $e) {
+                    // Use default logo path if database query fails
+                }
                 ?>
                 <?php if (file_exists('../' . $logoPath)): ?>
                 <img src="<?php echo $logoPath; ?>" alt="Company Logo" class="h-20 w-auto">
@@ -85,7 +103,7 @@ $pageTitle = 'Print Profit & Loss';
             <div>
                 <h3 class="text-lg font-semibold text-macgray-800 border-b pb-2">Revenue</h3>
                 <div class="mt-4 space-y-2 text-sm">
-                    <div class="flex justify-between"><span class="text-macgray-600">Gross Sales (Invoices + Receipts)</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grossRevenue, 2); ?></span></div>
+                    <div class="flex justify-between"><span class="text-macgray-600">Gross Sales (Invoices)</span><span><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($grossRevenue, 2); ?></span></div>
                     <div class="flex justify-between"><span class="text-macgray-600">Less: Returns & Allowances (Credit Notes)</span><span>(<?php echo CURRENCY_SYMBOL; ?><?php echo number_format($totalCredits, 2); ?>)</span></div>
                 </div>
                 <div class="flex justify-between mt-4 pt-2 border-t font-bold"><span class="text-base">Net Revenue</span><span class="text-base"><?php echo CURRENCY_SYMBOL; ?><?php echo number_format($netRevenue, 2); ?></span></div>

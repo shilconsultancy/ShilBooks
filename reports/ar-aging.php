@@ -14,21 +14,26 @@ $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 // --- A/R Aging Calculations ---
 
 // Fetch all unpaid invoices created on or before the "as of" date
-$sql = "SELECT
-            i.id,
-            i.invoice_number,
-            i.due_date,
-            (i.total - i.amount_paid) as balance_due,
-            c.name as customer_name,
-            DATEDIFF(:as_of_date, i.due_date) as days_overdue
-        FROM invoices i
-        JOIN customers c ON i.customer_id = c.id
-        WHERE i.status IN ('sent', 'overdue')
-        AND i.invoice_date <= :as_of_date";
+try {
+    $sql = "SELECT
+                i.id,
+                i.invoice_number,
+                i.due_date,
+                (i.total - i.amount_paid) as balance_due,
+                c.name as customer_name,
+                DATEDIFF(:as_of_date, i.due_date) as days_overdue
+            FROM invoices i
+            JOIN customers c ON i.customer_id = c.id
+            WHERE i.status IN ('sent', 'overdue')
+            AND i.invoice_date <= :as_of_date";
 
-$stmt = $pdo->prepare($sql);
-$stmt->execute(['as_of_date' => $as_of_date]);
-$unpaid_invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute(['as_of_date' => $as_of_date]);
+    $unpaid_invoices = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    $unpaid_invoices = [];
+    $error_message = "Database error: " . $e->getMessage();
+}
 
 // Prepare buckets for categorizing invoices
 $buckets = [
@@ -82,6 +87,11 @@ require_once '../partials/sidebar.php';
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-7xl mx-auto">
+             <?php if (isset($error_message)): ?>
+             <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                 <?php echo htmlspecialchars($error_message); ?>
+             </div>
+             <?php endif; ?>
              <div class="bg-white p-4 rounded-xl shadow-sm border border-macgray-200 mb-6">
                 <form action="ar-aging.php" method="GET" class="flex items-center space-x-4">
                     <div>

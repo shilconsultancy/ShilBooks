@@ -13,51 +13,62 @@ $as_of_date = $_GET['as_of_date'] ?? date('Y-m-d');
 
 
 // --- Balance Sheet Calculations (as of the selected date) ---
+try {
+    // --- ASSETS ---
+    // 1. Cash (This is complex to calculate historically, so we'll show the current balance of accounts created before the as_of_date)
+    $cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE DATE(created_at) <= ?");
+    $cash_stmt->execute([$as_of_date]);
+    $totalCash = $cash_stmt->fetchColumn() ?? 0;
 
-// --- ASSETS ---
-// 1. Cash (This is complex to calculate historically, so we'll show the current balance of accounts created before the as_of_date)
-$cash_stmt = $pdo->prepare("SELECT SUM(current_balance) FROM bank_accounts WHERE DATE(created_at) <= ?");
-$cash_stmt->execute([$as_of_date]);
-$totalCash = $cash_stmt->fetchColumn() ?? 0;
+    // 2. Accounts Receivable (current balance of invoices created before the as_of_date)
+    $ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue') AND invoice_date <= ?");
+    $ar_stmt->execute([$as_of_date]);
+    $totalAR = $ar_stmt->fetchColumn() ?? 0;
 
-// 2. Accounts Receivable (current balance of invoices created before the as_of_date)
-$ar_stmt = $pdo->prepare("SELECT SUM(total - amount_paid) FROM invoices WHERE status IN ('sent', 'overdue') AND invoice_date <= ?");
-$ar_stmt->execute([$as_of_date]);
-$totalAR = $ar_stmt->fetchColumn() ?? 0;
+    // 3. Inventory Asset (current value)
+    $inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE item_type = 'product'");
+    $inv_stmt->execute();
+    $totalInventory = $inv_stmt->fetchColumn() ?? 0;
 
-// 3. Inventory Asset (current value)
-$inv_stmt = $pdo->prepare("SELECT SUM(purchase_price * quantity) FROM items WHERE item_type = 'product'");
-$inv_stmt->execute();
-$totalInventory = $inv_stmt->fetchColumn() ?? 0;
+    $totalAssets = $totalCash + $totalAR + $totalInventory;
 
-$totalAssets = $totalCash + $totalAR + $totalInventory;
+    // --- LIABILITIES --- (Placeholder)
+    $totalLiabilities = 0.00;
 
-// --- LIABILITIES --- (Placeholder)
-$totalLiabilities = 0.00;
+    // --- EQUITY ---
+    // 1. Retained Earnings (Net Profit from the beginning of time up to the as_of_date)
+    $revenue_start_date = '1970-01-01'; // A date far in the past
+    $paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
+    $paid_invoices_total_stmt->execute([$revenue_start_date, $as_of_date]);
+    $grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
+    // Note: Sales receipts feature has been removed from this project
+    $credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
+    $credit_notes_stmt->execute([$revenue_start_date, $as_of_date]);
+    $totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
+    $netRevenue = $grossRevenue - $totalCredits;
+    $expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
+    $expenses_stmt->execute([$revenue_start_date, $as_of_date]);
+    $totalExpenses = $expenses_stmt->fetchColumn() ?? 0;
+    $retainedEarnings = $netRevenue - $totalExpenses;
 
-// --- EQUITY ---
-// 1. Retained Earnings (Net Profit from the beginning of time up to the as_of_date)
-$revenue_start_date = '1970-01-01'; // A date far in the past
-$paid_invoices_total_stmt = $pdo->prepare("SELECT SUM(total) FROM invoices WHERE status = 'paid' AND invoice_date BETWEEN ? AND ?");
-$paid_invoices_total_stmt->execute([$revenue_start_date, $as_of_date]);
-$grossRevenue = $paid_invoices_total_stmt->fetchColumn() ?? 0;
-$receipts_total_stmt = $pdo->prepare("SELECT SUM(total) FROM sales_receipts WHERE receipt_date BETWEEN ? AND ?");
-$receipts_total_stmt->execute([$revenue_start_date, $as_of_date]);
-$grossRevenue += $receipts_total_stmt->fetchColumn() ?? 0;
-$credit_notes_stmt = $pdo->prepare("SELECT SUM(amount) FROM credit_notes WHERE credit_note_date BETWEEN ? AND ?");
-$credit_notes_stmt->execute([$revenue_start_date, $as_of_date]);
-$totalCredits = $credit_notes_stmt->fetchColumn() ?? 0;
-$netRevenue = $grossRevenue - $totalCredits;
-$expenses_stmt = $pdo->prepare("SELECT SUM(amount) FROM expenses WHERE expense_date BETWEEN ? AND ?");
-$expenses_stmt->execute([$revenue_start_date, $as_of_date]);
-$totalExpenses = $expenses_stmt->fetchColumn() ?? 0;
-$retainedEarnings = $netRevenue - $totalExpenses;
+    // Owner's Equity (Placeholder for now)
+    $ownersEquity = 0.00;
+    $totalEquity = $retainedEarnings + $ownersEquity;
 
-// Owner's Equity (Placeholder for now)
-$ownersEquity = 0.00;
-$totalEquity = $retainedEarnings + $ownersEquity;
-
-$totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
+    $totalLiabilitiesAndEquity = $totalLiabilities + $totalEquity;
+} catch (Exception $e) {
+    // Handle database errors gracefully
+    $totalCash = 0;
+    $totalAR = 0;
+    $totalInventory = 0;
+    $totalAssets = 0;
+    $totalLiabilities = 0;
+    $retainedEarnings = 0;
+    $ownersEquity = 0;
+    $totalEquity = 0;
+    $totalLiabilitiesAndEquity = 0;
+    $error_message = "Database error: " . $e->getMessage();
+}
 
 
 $pageTitle = 'Balance Sheet Report';
@@ -78,6 +89,11 @@ require_once '../partials/sidebar.php';
 
     <main class="content-area flex-1 overflow-y-auto p-6 bg-macgray-50">
         <div class="max-w-4xl mx-auto">
+            <?php if (isset($error_message)): ?>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                <?php echo htmlspecialchars($error_message); ?>
+            </div>
+            <?php endif; ?>
             <div class="bg-white p-4 rounded-xl shadow-sm border border-macgray-200 mb-6">
                 <form action="balance-sheet.php" method="GET" class="flex items-center space-x-4">
                     <div>

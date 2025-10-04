@@ -56,65 +56,65 @@ require_once '../partials/sidebar.php';
                     </div>
                 </a>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 opacity-50">
+                <a href="<?php echo BASE_PATH; ?>reports/cash-flows.php" class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 hover:shadow-md transition-shadow">
                      <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
                             <i data-feather="dollar-sign" class="text-green-500"></i>
                         </div>
                         <div>
                             <h2 class="font-semibold text-macgray-800">Statement of Cash Flows</h2>
-                            <p class="text-sm text-macgray-500">Coming soon.</p>
+                            <p class="text-sm text-macgray-500">Track your cash inflows and outflows.</p>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <div class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 opacity-50">
+                <a href="<?php echo BASE_PATH; ?>reports/sales-by-customer.php" class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 hover:shadow-md transition-shadow">
                      <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full bg-yellow-100 flex items-center justify-center">
                             <i data-feather="users" class="text-yellow-500"></i>
                         </div>
                         <div>
                             <h2 class="font-semibold text-macgray-800">Sales by Customer</h2>
-                            <p class="text-sm text-macgray-500">Coming soon.</p>
+                            <p class="text-sm text-macgray-500">Analyze sales performance by customer.</p>
                         </div>
                     </div>
-                </div>
+                </a>
                 
-                <div class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 opacity-50">
+                <a href="<?php echo BASE_PATH; ?>reports/sales-by-item.php" class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 hover:shadow-md transition-shadow">
                      <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center">
                             <i data-feather="package" class="text-indigo-500"></i>
                         </div>
                         <div>
                             <h2 class="font-semibold text-macgray-800">Sales by Item/Service</h2>
-                            <p class="text-sm text-macgray-500">Coming soon.</p>
+                            <p class="text-sm text-macgray-500">Track sales performance by product or service.</p>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <div class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 opacity-50">
+                <a href="<?php echo BASE_PATH; ?>reports/ap-aging.php" class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 hover:shadow-md transition-shadow">
                      <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
                             <i data-feather="alert-circle" class="text-red-500"></i>
                         </div>
                         <div>
                             <h2 class="font-semibold text-macgray-800">A/P Aging</h2>
-                            <p class="text-sm text-macgray-500">Coming soon.</p>
+                            <p class="text-sm text-macgray-500">See what you owe and how overdue it is.</p>
                         </div>
                     </div>
-                </div>
+                </a>
 
-                <div class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 opacity-50">
+                <a href="<?php echo BASE_PATH; ?>reports/expenses-by-vendor.php" class="bg-white rounded-xl shadow-sm border border-macgray-200 p-6 hover:shadow-md transition-shadow">
                      <div class="flex items-center space-x-4">
                         <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
                             <i data-feather="truck" class="text-purple-500"></i>
                         </div>
                         <div>
                             <h2 class="font-semibold text-macgray-800">Expenses by Vendor</h2>
-                            <p class="text-sm text-macgray-500">Coming soon.</p>
+                            <p class="text-sm text-macgray-500">Analyze expenses by vendor or category.</p>
                         </div>
                     </div>
-                </div>
+                </a>
 
             </div>
         </div>

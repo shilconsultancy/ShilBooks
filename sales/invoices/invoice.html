@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f9f9f9;
+    }
+    .invoice-box {
+      width: 210mm;
+      min-height: 297mm;
+      background: #fff;
+      padding: 25mm 20mm;
+      margin: 20px auto;
+      border-radius: 8px;
+      box-shadow: 0 0 20px rgba(0,0,0,.1);
+      font-size: 14px;
+      color: #333;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 30px;
+    }
+    .logo img {
+      max-width: 120px;
+      border-radius: 6px;
+    }
+    .invoice-details {
+      text-align: right;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 22px;
+      color: #222;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .billing {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 25px;
+    }
+    .billing .bill-from,
+    .billing .bill-to {
+      width: 48%;
+      font-size: 13px;
+      color: #555;
+      line-height: 1.6;
+      text-align: left;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    table thead {
+      background: #f0f0f0;
+    }
+    table th {
+      padding: 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      color: #333;
+      border-bottom: 2px solid #ddd;
+    }
+    table td {
+      padding: 10px;
+      font-size: 13px;
+      border-bottom: 1px solid #eee;
+    }
+    table tr:last-child td {
+      border-bottom: none;
+    }
+
+    /* Alignment */
+    table th:nth-child(1),
+    table td:nth-child(1) {
+      text-align: left;
+    }
+    table th:nth-child(2),
+    table th:nth-child(3),
+    table th:nth-child(4),
+    table td:nth-child(2),
+    table td:nth-child(3),
+    table td:nth-child(4) {
+      text-align: right;
+    }
+
+    .totals {
+      margin-top: 20px;
+      width: 300px;
+      float: right;
+      border-collapse: collapse;
+    }
+    .totals td {
+      padding: 8px;
+      border-top: 1px solid #eee;
+    }
+    .totals .label {
+      text-align: left;
+      font-weight: bold;
+      background: #f9f9f9;
+    }
+    .totals .value {
+      text-align: right;
+    }
+    .payment-details {
+      clear: both;
+      margin-top: 50px;
+      font-size: 13px;
+      color: #555;
+    }
+    .footer {
+      margin-top: 40px;
+      font-size: 12px;
+      text-align: center;
+      color: #888;
+    }
+    @media print {
+      body {
+        background: #fff;
+      }
+      .invoice-box {
+        box-shadow: none;
+        margin: 0;
+        border-radius: 0;
+      }
+      table thead {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .totals .label {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-box">
+
+    <!-- Header -->
+    <div class="top-bar">
+      <div class="logo">
+        <img src="https://scontent.fcgp29-1.fna.fbcdn.net/v/t39.30808-6/375987847_7182796938414760_3494980128420191368_n.jpg?_nc_cat=101&ccb=1-7&_nc_sid=6ee11a&_nc_eui2=AeFy-dv2v6XVMQseac9nN8ZaoECahBEJ8CSgQJqEEQnwJFm9iZAVgmwP-h7UF1HEorOemwno7VwmMe2HnXsljLX6&_nc_ohc=z6CQW_q9aAkQ7kNvwHYIwJY&_nc_oc=Adk-IbY31kKBN-OWCfWT_7JISUs271MdfpjpitHRaSpU5TQRkx-WR3WL7pwtMtBZrg8&_nc_zt=23&_nc_ht=scontent.fcgp29-1.fna&_nc_gid=oK0VdhqfSxssWS90xyEy9g&oh=00_AfemJ1g4PyPEvYavYYgPbRjzqBPwWlWZrsITnC2hG6Ue9w&oe=68E65F4A" alt="Company Logo">
+      </div>
+      <div class="invoice-details">
+        <h2>Invoice</h2>
+        <strong>No:</strong> 0001<br>
+        <strong>Date:</strong> 04/10/2025<br>
+        <strong>Due:</strong> 11/10/2025
+      </div>
+    </div>
+
+    <!-- Bill From / To -->
+    <div class="billing">
+      <div class="bill-from">
+        <strong>Bill From:</strong><br>
+        Company Name<br>
+        Address Line 1<br>
+        Address Line 2<br>
+        Phone: +123456789<br>
+        Email: info@company.com
+      </div>
+      <div class="bill-to">
+        <strong>Bill To:</strong><br>
+        Client Name<br>
+        Client Address<br>
+        Client Email
+      </div>
+    </div>
+
+    <!-- Items -->
+    <table>
+      <thead>
+        <tr>
+          <th>Item</th>
+          <th>Qty</th>
+          <th>Unit Price</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Item 1 Description</td>
+          <td>2</td>
+          <td>$50</td>
+          <td>$100</td>
+        </tr>
+        <tr>
+          <td>Item 2 Description</td>
+          <td>1</td>
+          <td>$120</td>
+          <td>$120</td>
+        </tr>
+        <tr>
+          <td>Item 3 Description</td>
+          <td>3</td>
+          <td>$40</td>
+          <td>$120</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals -->
+    <table class="totals">
+      <tr>
+        <td class="label">Subtotal</td>
+        <td class="value">$340</td>
+      </tr>
+      <tr>
+        <td class="label">Tax (10%)</td>
+        <td class="value">$34</td>
+      </tr>
+      <tr>
+        <td class="label"><strong>Grand Total</strong></td>
+        <td class="value"><strong>$374</strong></td>
+      </tr>
+    </table>
+
+    <!-- Payment Info -->
+    <div class="payment-details">
+      <strong>Payment Details:</strong><br>
+      Bank: Example Bank<br>
+      Account: Company Name<br>
+      Account No: 123456789<br>
+      SWIFT: EXAMP123
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Thank you for your business! <br>
+      This is a computer-generated invoice.
+    </div>
+  </div>
+</body>
+</html>

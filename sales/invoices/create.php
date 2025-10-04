@@ -42,7 +42,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM invoices");
             $stmt->execute();
             $invoice_count = $stmt->fetchColumn();
-            $invoice_number = INVOICE_PREFIX . str_pad($invoice_count + 1, 4, '0', STR_PAD_LEFT);
+            $invoice_number = INVOICE_PREFIX . str_pad($invoice_count + 2423, 4, '0', STR_PAD_LEFT);
 
             // Insert into the main `invoices` table, now including tax_rate_id
             $sql = "INSERT INTO invoices (customer_id, invoice_number, invoice_date, due_date, tax_rate_id, subtotal, tax, total, notes, status)
